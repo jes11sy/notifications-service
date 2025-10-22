@@ -1,0 +1,74 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Настройки директоров для уведомлений
+model Director {
+  id             Int       @id @default(autoincrement())
+  name           String
+  cities         String[]  @default([])
+  tgId           String?   @unique @map("tg_id")
+  chatId         String?   @map("chat_id")
+  login          String?   @unique
+  dateCreate     DateTime  @default(now()) @map("date_create")
+  
+  notifications  Notification[]
+  
+  @@map("director")
+}
+
+// История уведомлений
+model Notification {
+  id              Int       @id @default(autoincrement())
+  type            String    // 'new_order', 'date_change', 'order_rejection'
+  orderId         Int       @map("order_id")
+  directorId      Int       @map("director_id")
+  message         String
+  status          String    @default("pending") // 'pending', 'sent', 'failed'
+  sentAt          DateTime? @map("sent_at")
+  errorMessage    String?   @map("error_message")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  
+  director        Director  @relation(fields: [directorId], references: [id])
+  
+  @@index([orderId])
+  @@index([directorId])
+  @@index([type])
+  @@index([status])
+  @@map("notification")
+}
+
+// Шаблоны сообщений
+model MessageTemplate {
+  id              Int       @id @default(autoincrement())
+  type            String    @unique // 'new_order', 'date_change', 'order_rejection'
+  template        String    // Текст шаблона с плейсхолдерами
+  enabled         Boolean   @default(true)
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  
+  @@map("message_template")
+}
+
+// Для связи с заказами (read-only)
+model Order {
+  id                    Int       @id @default(autoincrement())
+  rk                    String
+  city                  String
+  phone                 String
+  clientName            String
+  address               String
+  dateMeeting           String
+  statusOrder           String
+  masterId              Int?
+  operatorNameId        Int
+  createDate            DateTime  @default(now())
+  
+  @@map("order")
+}
+
