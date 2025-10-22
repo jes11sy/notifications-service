@@ -6,10 +6,5 @@ export class UpdateTelegramDto {
   @IsString()
   @IsOptional()
   tgId?: string;
-
-  @ApiProperty({ required: false })
-  @IsString()
-  @IsOptional()
-  chatId?: string;
 }
 

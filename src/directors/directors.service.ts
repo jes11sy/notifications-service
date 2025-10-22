@@ -13,7 +13,6 @@ export class DirectorsService {
         name: true,
         cities: true,
         tgId: true,
-        chatId: true,
         dateCreate: true,
       },
       orderBy: { name: 'asc' },
@@ -51,7 +50,6 @@ export class DirectorsService {
       where: { id },
       data: {
         tgId: dto.tgId,
-        chatId: dto.chatId,
       },
     });
 

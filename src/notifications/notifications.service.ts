@@ -31,7 +31,7 @@ export class NotificationsService {
     const directors = await this.prisma.director.findMany({
       where: {
         cities: { has: city },
-        chatId: { not: null },
+        tgId: { not: null },
       },
     });
 
@@ -54,7 +54,7 @@ export class NotificationsService {
     const results = [];
     for (const director of directors) {
       try {
-        const sent = await this.telegram.sendMessage(director.chatId, message);
+        const sent = await this.telegram.sendMessage(director.tgId, message);
         
         // Сохраняем в историю
         await this.prisma.notification.create({
