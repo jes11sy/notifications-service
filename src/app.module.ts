@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 // import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { NotificationsModule } from './notifications/notifications.module';
@@ -11,6 +12,10 @@ import { TelegramModule } from './telegram/telegram.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+    }),
+    PrometheusModule.register({
+      defaultMetrics: { enabled: true },
+      path: '/metrics',
     }),
     // PrismaModule,
     AuthModule,
