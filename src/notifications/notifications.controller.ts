@@ -55,16 +55,19 @@ export class NotificationsController {
   @ApiOperation({ summary: 'Send new order notification (webhook)' })
   async newOrder(@Body() dto: NewOrderNotificationDto, @Headers('x-webhook-token') token: string) {
     this.logger.log(`New order notification: ${JSON.stringify(dto)}`);
+    this.logger.log(`Received token: "${token}", Expected: "${process.env.WEBHOOK_TOKEN || 'your-webhook-secret'}"`);
     
     // Проверяем webhook token
     const webhookToken = process.env.WEBHOOK_TOKEN || 'your-webhook-secret';
     if (token !== webhookToken) {
+      this.logger.warn(`Token mismatch! Received: "${token}", Expected: "${webhookToken}"`);
       return {
         success: false,
         message: 'Invalid webhook token',
       };
     }
 
+    this.logger.log(`✅ Token validated, calling service...`);
     return this.notificationsService.sendNewOrderNotification(dto);
   }
 
