@@ -105,24 +105,6 @@ export class NotificationsController {
     return this.notificationsService.sendOrderRejectionNotification(dto);
   }
 
-  @Get('history')
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @ApiBearerAuth()
-  @Roles(UserRole.DIRECTOR, UserRole.CALLCENTRE_ADMIN)
-  @ApiOperation({ summary: 'Get notifications history' })
-  async getHistory(@Query() query: any) {
-    return this.notificationsService.getHistory(query);
-  }
-
-  @Get('stats')
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @ApiBearerAuth()
-  @Roles(UserRole.DIRECTOR, UserRole.CALLCENTRE_ADMIN)
-  @ApiOperation({ summary: 'Get notifications statistics' })
-  async getStats(@Query() query: any) {
-    return this.notificationsService.getStats(query);
-  }
-
   // Endpoints для уведомлений мастерам
   @Post('master-assigned')
   @HttpCode(HttpStatus.OK)

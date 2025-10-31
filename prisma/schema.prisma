@@ -22,8 +22,6 @@ model Director {
   createdAt     DateTime      @default(now()) @map("created_at")
   updatedAt     DateTime      @updatedAt @map("updated_at")
   
-  notifications Notification[]
-  
   @@map("director")
 }
 
@@ -44,36 +42,9 @@ model Master {
   createdAt     DateTime      @default(now()) @map("created_at")
   updatedAt     DateTime      @updatedAt @map("updated_at")
   
-  notifications Notification[]
   orders        Order[]
   
   @@map("master")
-}
-
-// История уведомлений
-model Notification {
-  id              Int       @id @default(autoincrement())
-  type            String    // 'new_order', 'date_change', 'order_rejection', 'master_assigned', 'order_accepted', 'order_closed', 'order_in_modern', 'close_order_reminder', 'modern_closing_reminder'
-  orderId         Int       @map("order_id")
-  recipientType   String    @map("recipient_type") // 'director' или 'master'
-  directorId      Int?      @map("director_id")
-  masterId        Int?      @map("master_id")
-  message         String
-  status          String    @default("pending") // 'pending', 'sent', 'failed'
-  sentAt          DateTime? @map("sent_at")
-  errorMessage    String?   @map("error_message")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  
-  director        Director? @relation(fields: [directorId], references: [id])
-  master          Master?   @relation(fields: [masterId], references: [id])
-  
-  @@index([orderId])
-  @@index([directorId])
-  @@index([masterId])
-  @@index([type])
-  @@index([status])
-  @@index([recipientType])
-  @@map("notification")
 }
 
 // Для связи с заказами (read-only)

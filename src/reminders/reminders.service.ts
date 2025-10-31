@@ -55,7 +55,7 @@ export class RemindersService {
       this.logger.log(`Found ${orders.length} orders to check for close reminders`);
 
       for (const order of orders) {
-        if (!order.master || !order.master.tgId) {
+        if (!order.master || !order.master.chatId) {
           continue;
         }
 
@@ -149,7 +149,7 @@ export class RemindersService {
       this.logger.log(`Found ${orders.length} orders in modern status`);
 
       for (const order of orders) {
-        if (!order.master || !order.master.tgId) {
+        if (!order.master || !order.master.chatId) {
           continue;
         }
 

@@ -63,39 +63,25 @@ export class NotificationsService {
 
       // Отправляем уведомления всем директорам
       for (const director of directors) {
-        try {
-          const sent = await this.telegram.sendMessage(director.tgId, message);
-          
-          // Сохраняем в историю
-          await this.prisma.notification.create({
-            data: {
-              type,
-              orderId,
-              recipientType: 'director',
-              directorId: director.id,
-              message,
-              status: sent ? 'sent' : 'failed',
-              sentAt: sent ? new Date() : null,
-              errorMessage: sent ? null : 'Failed to send',
-            },
-          });
+      try {
+        const sent = await this.telegram.sendMessage(director.tgId, message);
 
-          results.push({
-            recipientType: 'director',
-            directorId: director.id,
-            directorName: director.name,
-            success: sent,
-          });
-        } catch (error) {
-          this.logger.error(`Error sending notification to director ${director.id}: ${error.message}`);
-          results.push({
-            recipientType: 'director',
-            directorId: director.id,
-            directorName: director.name,
-            success: false,
-            error: error.message,
-          });
-        }
+        results.push({
+          recipientType: 'director',
+          directorId: director.id,
+          directorName: director.name,
+          success: sent,
+        });
+      } catch (error) {
+        this.logger.error(`Error sending notification to director ${director.id}: ${error.message}`);
+        results.push({
+          recipientType: 'director',
+          directorId: director.id,
+          directorName: director.name,
+          success: false,
+          error: error.message,
+        });
+      }
       }
     } 
     
@@ -113,8 +99,8 @@ export class NotificationsService {
         };
       }
 
-      if (!master.tgId) {
-        this.logger.warn(`Master ${masterId} has no Telegram ID configured`);
+      if (!master.chatId) {
+        this.logger.warn(`Master ${masterId} has no Telegram chat ID configured`);
         return {
           success: false,
           message: `Master ${master.name} has no Telegram configured`,
@@ -125,21 +111,7 @@ export class NotificationsService {
       const message = template.format(messageData);
 
       try {
-        const sent = await this.telegram.sendMessage(master.tgId, message);
-        
-        // Сохраняем в историю
-        await this.prisma.notification.create({
-          data: {
-            type,
-            orderId,
-            recipientType: 'master',
-            masterId: master.id,
-            message,
-            status: sent ? 'sent' : 'failed',
-            sentAt: sent ? new Date() : null,
-            errorMessage: sent ? null : 'Failed to send',
-          },
-        });
+        const sent = await this.telegram.sendMessage(master.chatId, message);
 
         results.push({
           recipientType: 'master',
@@ -335,94 +307,6 @@ export class NotificationsService {
         daysUntilClosing: dto.daysUntilClosing || 0,
       },
     });
-  }
-
-  async getHistory(query: any) {
-    const { type, directorId, masterId, status, startDate, endDate, limit = 100, offset = 0 } = query;
-
-    const where: any = {};
-
-    if (type) where.type = type;
-    if (directorId) where.directorId = +directorId;
-    if (masterId) where.masterId = +masterId;
-    if (status) where.status = status;
-
-    if (startDate || endDate) {
-      where.createdAt = {};
-      if (startDate) where.createdAt.gte = new Date(startDate);
-      if (endDate) where.createdAt.lte = new Date(endDate);
-    }
-
-    const [notifications, total] = await Promise.all([
-      this.prisma.notification.findMany({
-        where,
-        include: {
-          director: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-          master: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-        },
-        orderBy: { createdAt: 'desc' },
-        take: +limit,
-        skip: +offset,
-      }),
-      this.prisma.notification.count({ where }),
-    ]);
-
-    return {
-      success: true,
-      data: notifications,
-      pagination: {
-        total,
-        limit: +limit,
-        offset: +offset,
-      },
-    };
-  }
-
-  async getStats(query: any) {
-    const { startDate, endDate } = query;
-
-    const where: any = {};
-
-    if (startDate || endDate) {
-      where.createdAt = {};
-      if (startDate) where.createdAt.gte = new Date(startDate);
-      if (endDate) where.createdAt.lte = new Date(endDate);
-    }
-
-    const [total, sent, failed, byType] = await Promise.all([
-      this.prisma.notification.count({ where }),
-      this.prisma.notification.count({ where: { ...where, status: 'sent' } }),
-      this.prisma.notification.count({ where: { ...where, status: 'failed' } }),
-      this.prisma.notification.groupBy({
-        by: ['type'],
-        where,
-        _count: { id: true },
-      }),
-    ]);
-
-    return {
-      success: true,
-      data: {
-        total,
-        sent,
-        failed,
-        successRate: total > 0 ? Math.round((sent / total) * 100) : 0,
-        byType: byType.reduce((acc, item) => {
-          acc[item.type] = item._count.id;
-          return acc;
-        }, {}),
-      },
-    };
   }
 }
 
