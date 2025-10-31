@@ -9,6 +9,7 @@ import { TelegramModule } from './telegram/telegram.module';
 import { DirectorsModule } from './directors/directors.module';
 import { MastersModule } from './masters/masters.module';
 import { RemindersModule } from './reminders/reminders.module';
+import { HealthController } from './health.controller';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { RemindersModule } from './reminders/reminders.module';
     MastersModule,
     RemindersModule,
   ],
+  controllers: [HealthController],
 })
 export class AppModule {}
 
