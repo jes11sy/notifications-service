@@ -50,6 +50,11 @@ export const MESSAGE_TEMPLATES = {
 ⚠️ Подтвердите принятие заказа в ЦРМ!`,
   },
 
+  master_reassigned: {
+    recipientType: 'master',
+    format: (data: any) => `🔄 Заказ №${data.orderId} передан другому мастеру`,
+  },
+
   order_accepted: {
     recipientType: 'master',
     format: (data: any) => `✅ Заказ №${data.orderId} принят

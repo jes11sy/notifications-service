@@ -7,6 +7,7 @@ export const NotificationTypes = [
   'date_change',         // Изменение даты (директор + мастер если назначен)
   'order_rejection',     // Отказ от заказа (директор + мастер если назначен)
   'master_assigned',     // Мастер назначен на заказ (мастер)
+  'master_reassigned',   // Заказ передан другому мастеру (старый мастер)
   'order_accepted',      // Заказ принят мастером (мастер)
   'order_closed',        // Заказ закрыт (мастер)
   'order_in_modern',     // Заказ в модерне (мастер)
@@ -182,6 +183,16 @@ export class MasterAssignedNotificationDto {
   @IsDateString()
   @IsOptional()
   dateMeeting?: string;
+}
+
+export class MasterReassignedNotificationDto {
+  @ApiProperty()
+  @IsNumber()
+  orderId: number;
+
+  @ApiProperty()
+  @IsNumber()
+  oldMasterId: number;
 }
 
 export class OrderAcceptedNotificationDto {
