@@ -45,6 +45,7 @@ model Master {
   updatedAt     DateTime      @updatedAt @map("updated_at")
   
   notifications Notification[]
+  orders        Order[]
   
   @@map("master")
 }
@@ -99,6 +100,8 @@ model Order {
   dateClosmod           DateTime? @map("date_closmod")
   createdAt             DateTime  @default(now()) @map("created_at")
   updatedAt             DateTime  @updatedAt @map("updated_at")
+  
+  master                Master?   @relation(fields: [masterId], references: [id])
   
   @@map("orders")
 }
