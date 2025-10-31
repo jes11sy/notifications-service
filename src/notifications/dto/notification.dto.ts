@@ -36,10 +36,6 @@ export class SendNotificationDto {
   @IsOptional()
   masterId?: number;
 
-  @ApiProperty()
-  @IsString()
-  token: string;
-
   @ApiProperty({ required: false })
   @IsObject()
   @IsOptional()
@@ -90,10 +86,6 @@ export class NewOrderNotificationDto {
   @IsString()
   @IsOptional()
   typeEquipment?: string;
-
-  @ApiProperty()
-  @IsString()
-  token: string;
 }
 
 export class DateChangeNotificationDto {
@@ -122,10 +114,6 @@ export class DateChangeNotificationDto {
   @IsNumber()
   @IsOptional()
   masterId?: number;
-
-  @ApiProperty()
-  @IsString()
-  token: string;
 }
 
 export class OrderRejectionNotificationDto {
@@ -153,10 +141,6 @@ export class OrderRejectionNotificationDto {
   @IsNumber()
   @IsOptional()
   masterId?: number;
-
-  @ApiProperty()
-  @IsString()
-  token: string;
 }
 
 // DTO для уведомлений мастерам
@@ -198,10 +182,6 @@ export class MasterAssignedNotificationDto {
   @IsDateString()
   @IsOptional()
   dateMeeting?: string;
-
-  @ApiProperty()
-  @IsString()
-  token: string;
 }
 
 export class OrderAcceptedNotificationDto {
@@ -217,10 +197,6 @@ export class OrderAcceptedNotificationDto {
   @IsString()
   @IsOptional()
   clientName?: string;
-
-  @ApiProperty()
-  @IsString()
-  token: string;
 }
 
 export class OrderClosedNotificationDto {
@@ -241,10 +217,6 @@ export class OrderClosedNotificationDto {
   @IsDateString()
   @IsOptional()
   closingDate?: string;
-
-  @ApiProperty()
-  @IsString()
-  token: string;
 }
 
 export class OrderInModernNotificationDto {
@@ -264,10 +236,6 @@ export class OrderInModernNotificationDto {
   @IsString()
   @IsOptional()
   clientName?: string;
-
-  @ApiProperty()
-  @IsString()
-  token: string;
 }
 
 export class CloseOrderReminderNotificationDto {
@@ -288,10 +256,6 @@ export class CloseOrderReminderNotificationDto {
   @IsNumber()
   @IsOptional()
   daysOverdue?: number;
-
-  @ApiProperty()
-  @IsString()
-  token: string;
 }
 
 export class ModernClosingReminderNotificationDto {
@@ -316,9 +280,5 @@ export class ModernClosingReminderNotificationDto {
   @IsNumber()
   @IsOptional()
   daysUntilClosing?: number;
-
-  @ApiProperty()
-  @IsString()
-  token: string;
 }
 
