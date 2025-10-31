@@ -64,39 +64,8 @@ export class RemindersService {
           (now.getTime() - order.dateMeeting.getTime()) / (1000 * 60 * 60)
         );
 
-        // Проверяем последнее отправленное уведомление
-        const lastNotification = await this.prisma.notification.findFirst({
-          where: {
-            type: 'close_order_reminder',
-            orderId: order.id,
-            masterId: order.masterId,
-          },
-          orderBy: {
-            createdAt: 'desc',
-          },
-        });
-
-        let shouldSendReminder = false;
-
-        if (!lastNotification) {
-          // Первое напоминание - отправляем если прошло 3+ часа
-          if (hoursSinceMeeting >= this.FIRST_REMINDER_HOURS) {
-            shouldSendReminder = true;
-            this.logger.debug(`Order ${order.id}: First reminder (${hoursSinceMeeting}h since meeting)`);
-          }
-        } else {
-          // Повторное напоминание - отправляем если прошло 3+ часа с последнего
-          const hoursSinceLastReminder = Math.floor(
-            (now.getTime() - lastNotification.createdAt.getTime()) / (1000 * 60 * 60)
-          );
-
-          if (hoursSinceLastReminder >= this.REMINDER_INTERVAL_HOURS) {
-            shouldSendReminder = true;
-            this.logger.debug(`Order ${order.id}: Repeat reminder (${hoursSinceLastReminder}h since last)`);
-          }
-        }
-
-        if (shouldSendReminder) {
+        // Отправляем напоминание если прошло 3+ часа (крон работает каждый час)
+        if (hoursSinceMeeting >= this.FIRST_REMINDER_HOURS) {
           // Отправляем напоминание
           await this.notificationsService.sendCloseOrderReminderNotification({
             orderId: order.id,
@@ -164,82 +133,32 @@ export class RemindersService {
 
           // В день закрытия или если уже просрочено
           if (closingDate <= today) {
-            const lastNotification = await this.prisma.notification.findFirst({
-              where: {
-                type: 'modern_closing_reminder',
-                orderId: order.id,
-                masterId: order.masterId,
-              },
-              orderBy: {
-                createdAt: 'desc',
-              },
-            });
-
-            // Если это день закрытия или уже просрочено
+            shouldSendReminder = true;
+            
             if (closingDate.getTime() === today.getTime()) {
-              // В день закрытия - напомнить
-              shouldSendReminder = true;
               daysUntilClosing = 0;
               this.logger.debug(`Order ${order.id}: Closing date is today`);
-            } else if (closingDate < today) {
-              // Просрочено - напоминать каждый день
-              const lastReminderDate = lastNotification 
-                ? new Date(lastNotification.createdAt) 
-                : null;
-              
-              if (lastReminderDate) {
-                lastReminderDate.setHours(0, 0, 0, 0);
-              }
-
-              // Если не отправляли сегодня
-              if (!lastReminderDate || lastReminderDate < today) {
-                shouldSendReminder = true;
-                daysUntilClosing = Math.floor(
-                  (today.getTime() - closingDate.getTime()) / (1000 * 60 * 60 * 24)
-                );
-                isOverdue = true;
-                this.logger.debug(`Order ${order.id}: Overdue by ${daysUntilClosing} days`);
-              }
+            } else {
+              daysUntilClosing = Math.floor(
+                (today.getTime() - closingDate.getTime()) / (1000 * 60 * 60 * 24)
+              );
+              isOverdue = true;
+              this.logger.debug(`Order ${order.id}: Overdue by ${daysUntilClosing} days`);
             }
           }
         } else {
-          // Случай 2: Нет даты закрытия
-          const lastNotification = await this.prisma.notification.findFirst({
-            where: {
-              type: 'modern_closing_reminder',
-              orderId: order.id,
-              masterId: order.masterId,
-            },
-            orderBy: {
-              createdAt: 'desc',
-            },
-          });
+          // Случай 2: Нет даты закрытия - напоминаем через 3+ дня после обновления
+          const orderDate = new Date(order.updatedAt);
+          orderDate.setHours(0, 0, 0, 0);
+          
+          const daysSinceOrderUpdate = Math.floor(
+            (today.getTime() - orderDate.getTime()) / (1000 * 60 * 60 * 24)
+          );
 
-          if (!lastNotification) {
-            // Первое напоминание - через 3 дня после создания/обновления заказа
-            const orderDate = new Date(order.updatedAt);
-            orderDate.setHours(0, 0, 0, 0);
-            
-            const daysSinceOrderUpdate = Math.floor(
-              (today.getTime() - orderDate.getTime()) / (1000 * 60 * 60 * 24)
-            );
-
-            if (daysSinceOrderUpdate >= this.MODERN_REMINDER_DAYS) {
-              shouldSendReminder = true;
-              daysUntilClosing = 0;
-              this.logger.debug(`Order ${order.id}: First reminder (${daysSinceOrderUpdate} days since update)`);
-            }
-          } else {
-            // Повторные напоминания - каждый день
-            const lastReminderDate = new Date(lastNotification.createdAt);
-            lastReminderDate.setHours(0, 0, 0, 0);
-
-            // Если последнее напоминание было вчера или раньше
-            if (lastReminderDate < today) {
-              shouldSendReminder = true;
-              daysUntilClosing = 0;
-              this.logger.debug(`Order ${order.id}: Daily reminder (no closing date)`);
-            }
+          if (daysSinceOrderUpdate >= this.MODERN_REMINDER_DAYS) {
+            shouldSendReminder = true;
+            daysUntilClosing = 0;
+            this.logger.debug(`Order ${order.id}: Daily reminder (${daysSinceOrderUpdate} days since update)`);
           }
         }
 

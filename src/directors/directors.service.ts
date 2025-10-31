@@ -27,12 +27,6 @@ export class DirectorsService {
   async getDirector(id: number) {
     const director = await this.prisma.director.findUnique({
       where: { id },
-      include: {
-        notifications: {
-          orderBy: { createdAt: 'desc' },
-          take: 10,
-        },
-      },
     });
 
     if (!director) {
