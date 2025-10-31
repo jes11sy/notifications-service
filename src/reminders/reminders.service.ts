@@ -103,7 +103,6 @@ export class RemindersService {
             masterId: order.masterId!,
             clientName: order.clientName,
             daysOverdue: Math.floor(hoursSinceMeeting / 24),
-            token: process.env.WEBHOOK_TOKEN || 'internal',
           });
 
           this.logger.log(`✅ Sent close reminder for order ${order.id} to master ${order.master.name} (${hoursSinceMeeting}h overdue)`);
@@ -254,7 +253,6 @@ export class RemindersService {
               ? new Date(order.dateClosmod).toLocaleDateString('ru-RU')
               : 'Не указано',
             daysUntilClosing: isOverdue ? -daysUntilClosing : daysUntilClosing,
-            token: process.env.WEBHOOK_TOKEN || 'internal',
           });
 
           this.logger.log(

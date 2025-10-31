@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Query, UseGuards, HttpCode, HttpStatus, Logger } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, UseGuards, HttpCode, HttpStatus, Logger, Headers } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { NotificationsService } from './notifications.service';
@@ -37,10 +37,10 @@ export class NotificationsController {
   @Post('send')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Send generic notification (internal)' })
-  async send(@Body() dto: SendNotificationDto) {
+  async send(@Body() dto: SendNotificationDto, @Headers('x-webhook-token') token: string) {
     // Проверяем webhook token
     const webhookToken = process.env.WEBHOOK_TOKEN || 'your-webhook-secret';
-    if (dto.token !== webhookToken) {
+    if (token !== webhookToken) {
       return {
         success: false,
         message: 'Invalid webhook token',
@@ -53,12 +53,12 @@ export class NotificationsController {
   @Post('new-order')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Send new order notification (webhook)' })
-  async newOrder(@Body() dto: NewOrderNotificationDto) {
+  async newOrder(@Body() dto: NewOrderNotificationDto, @Headers('x-webhook-token') token: string) {
     this.logger.log(`New order notification: ${JSON.stringify(dto)}`);
     
     // Проверяем webhook token
     const webhookToken = process.env.WEBHOOK_TOKEN || 'your-webhook-secret';
-    if (dto.token !== webhookToken) {
+    if (token !== webhookToken) {
       return {
         success: false,
         message: 'Invalid webhook token',
@@ -71,11 +71,11 @@ export class NotificationsController {
   @Post('date-change')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Send date change notification (webhook)' })
-  async dateChange(@Body() dto: DateChangeNotificationDto) {
+  async dateChange(@Body() dto: DateChangeNotificationDto, @Headers('x-webhook-token') token: string) {
     this.logger.log(`Date change notification: ${JSON.stringify(dto)}`);
     
     const webhookToken = process.env.WEBHOOK_TOKEN || 'your-webhook-secret';
-    if (dto.token !== webhookToken) {
+    if (token !== webhookToken) {
       return {
         success: false,
         message: 'Invalid webhook token',
@@ -88,11 +88,11 @@ export class NotificationsController {
   @Post('order-rejection')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Send order rejection notification (webhook)' })
-  async orderRejection(@Body() dto: OrderRejectionNotificationDto) {
+  async orderRejection(@Body() dto: OrderRejectionNotificationDto, @Headers('x-webhook-token') token: string) {
     this.logger.log(`Order rejection notification: ${JSON.stringify(dto)}`);
     
     const webhookToken = process.env.WEBHOOK_TOKEN || 'your-webhook-secret';
-    if (dto.token !== webhookToken) {
+    if (token !== webhookToken) {
       return {
         success: false,
         message: 'Invalid webhook token',
@@ -124,11 +124,11 @@ export class NotificationsController {
   @Post('master-assigned')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Send master assigned notification (webhook)' })
-  async masterAssigned(@Body() dto: MasterAssignedNotificationDto) {
+  async masterAssigned(@Body() dto: MasterAssignedNotificationDto, @Headers('x-webhook-token') token: string) {
     this.logger.log(`Master assigned notification: ${JSON.stringify(dto)}`);
     
     const webhookToken = process.env.WEBHOOK_TOKEN || 'your-webhook-secret';
-    if (dto.token !== webhookToken) {
+    if (token !== webhookToken) {
       return {
         success: false,
         message: 'Invalid webhook token',
@@ -141,11 +141,11 @@ export class NotificationsController {
   @Post('order-accepted')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Send order accepted notification (webhook)' })
-  async orderAccepted(@Body() dto: OrderAcceptedNotificationDto) {
+  async orderAccepted(@Body() dto: OrderAcceptedNotificationDto, @Headers('x-webhook-token') token: string) {
     this.logger.log(`Order accepted notification: ${JSON.stringify(dto)}`);
     
     const webhookToken = process.env.WEBHOOK_TOKEN || 'your-webhook-secret';
-    if (dto.token !== webhookToken) {
+    if (token !== webhookToken) {
       return {
         success: false,
         message: 'Invalid webhook token',
@@ -158,11 +158,11 @@ export class NotificationsController {
   @Post('order-closed')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Send order closed notification (webhook)' })
-  async orderClosed(@Body() dto: OrderClosedNotificationDto) {
+  async orderClosed(@Body() dto: OrderClosedNotificationDto, @Headers('x-webhook-token') token: string) {
     this.logger.log(`Order closed notification: ${JSON.stringify(dto)}`);
     
     const webhookToken = process.env.WEBHOOK_TOKEN || 'your-webhook-secret';
-    if (dto.token !== webhookToken) {
+    if (token !== webhookToken) {
       return {
         success: false,
         message: 'Invalid webhook token',
@@ -175,11 +175,11 @@ export class NotificationsController {
   @Post('order-in-modern')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Send order in modern notification (webhook)' })
-  async orderInModern(@Body() dto: OrderInModernNotificationDto) {
+  async orderInModern(@Body() dto: OrderInModernNotificationDto, @Headers('x-webhook-token') token: string) {
     this.logger.log(`Order in modern notification: ${JSON.stringify(dto)}`);
     
     const webhookToken = process.env.WEBHOOK_TOKEN || 'your-webhook-secret';
-    if (dto.token !== webhookToken) {
+    if (token !== webhookToken) {
       return {
         success: false,
         message: 'Invalid webhook token',
@@ -192,11 +192,11 @@ export class NotificationsController {
   @Post('close-order-reminder')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Send close order reminder notification (webhook)' })
-  async closeOrderReminder(@Body() dto: CloseOrderReminderNotificationDto) {
+  async closeOrderReminder(@Body() dto: CloseOrderReminderNotificationDto, @Headers('x-webhook-token') token: string) {
     this.logger.log(`Close order reminder notification: ${JSON.stringify(dto)}`);
     
     const webhookToken = process.env.WEBHOOK_TOKEN || 'your-webhook-secret';
-    if (dto.token !== webhookToken) {
+    if (token !== webhookToken) {
       return {
         success: false,
         message: 'Invalid webhook token',
@@ -209,11 +209,11 @@ export class NotificationsController {
   @Post('modern-closing-reminder')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Send modern closing reminder notification (webhook)' })
-  async modernClosingReminder(@Body() dto: ModernClosingReminderNotificationDto) {
+  async modernClosingReminder(@Body() dto: ModernClosingReminderNotificationDto, @Headers('x-webhook-token') token: string) {
     this.logger.log(`Modern closing reminder notification: ${JSON.stringify(dto)}`);
     
     const webhookToken = process.env.WEBHOOK_TOKEN || 'your-webhook-secret';
-    if (dto.token !== webhookToken) {
+    if (token !== webhookToken) {
       return {
         success: false,
         message: 'Invalid webhook token',

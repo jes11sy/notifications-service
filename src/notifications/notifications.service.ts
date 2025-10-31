@@ -171,7 +171,6 @@ export class NotificationsService {
       type: 'new_order',
       orderId: dto.orderId,
       city: dto.city,
-      token: dto.token,
       data: {
         clientName: dto.clientName,
         phone: dto.phone,
@@ -193,7 +192,6 @@ export class NotificationsService {
       type: 'date_change',
       orderId: dto.orderId,
       city: dto.city,
-      token: dto.token,
       data: {
         clientName: dto.clientName,
         newDate: new Date(dto.newDate).toLocaleString('ru-RU'),
@@ -208,7 +206,6 @@ export class NotificationsService {
         type: 'date_change',
         orderId: dto.orderId,
         masterId: dto.masterId,
-        token: dto.token,
         data: {
           clientName: dto.clientName,
           newDate: new Date(dto.newDate).toLocaleString('ru-RU'),
@@ -233,7 +230,6 @@ export class NotificationsService {
       type: 'order_rejection',
       orderId: dto.orderId,
       city: dto.city,
-      token: dto.token,
       data: {
         clientName: dto.clientName,
         phone: dto.phone,
@@ -248,7 +244,6 @@ export class NotificationsService {
         type: 'order_rejection',
         orderId: dto.orderId,
         masterId: dto.masterId,
-        token: dto.token,
         data: {
           clientName: dto.clientName,
           phone: dto.phone,
@@ -271,7 +266,6 @@ export class NotificationsService {
       type: 'master_assigned',
       orderId: dto.orderId,
       masterId: dto.masterId,
-      token: dto.token,
       data: {
         rk: dto.rk || 'Не указано',
         avitoName: dto.avitoName || 'Не указано',
@@ -288,7 +282,6 @@ export class NotificationsService {
       type: 'order_accepted',
       orderId: dto.orderId,
       masterId: dto.masterId,
-      token: dto.token,
       data: {
         clientName: dto.clientName || 'Не указано',
       },
@@ -300,7 +293,6 @@ export class NotificationsService {
       type: 'order_closed',
       orderId: dto.orderId,
       masterId: dto.masterId,
-      token: dto.token,
       data: {
         clientName: dto.clientName || 'Не указано',
         closingDate: dto.closingDate ? new Date(dto.closingDate).toLocaleString('ru-RU') : new Date().toLocaleString('ru-RU'),
@@ -313,7 +305,6 @@ export class NotificationsService {
       type: 'order_in_modern',
       orderId: dto.orderId,
       masterId: dto.masterId,
-      token: dto.token,
       data: {
         clientName: dto.clientName || 'Не указано',
         expectedClosingDate: new Date(dto.expectedClosingDate).toLocaleString('ru-RU'),
@@ -326,7 +317,6 @@ export class NotificationsService {
       type: 'close_order_reminder',
       orderId: dto.orderId,
       masterId: dto.masterId,
-      token: dto.token,
       data: {
         clientName: dto.clientName || 'Не указано',
         daysOverdue: dto.daysOverdue || 0,
@@ -339,7 +329,6 @@ export class NotificationsService {
       type: 'modern_closing_reminder',
       orderId: dto.orderId,
       masterId: dto.masterId,
-      token: dto.token,
       data: {
         clientName: dto.clientName || 'Не указано',
         expectedClosingDate: new Date(dto.expectedClosingDate).toLocaleString('ru-RU'),
