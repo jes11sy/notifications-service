@@ -2,7 +2,18 @@ import { Controller, Get, Post, Body, Query, UseGuards, HttpCode, HttpStatus, Lo
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { NotificationsService } from './notifications.service';
-import { SendNotificationDto, NewOrderNotificationDto, DateChangeNotificationDto, OrderRejectionNotificationDto } from './dto/notification.dto';
+import {
+  SendNotificationDto,
+  NewOrderNotificationDto,
+  DateChangeNotificationDto,
+  OrderRejectionNotificationDto,
+  MasterAssignedNotificationDto,
+  OrderAcceptedNotificationDto,
+  OrderClosedNotificationDto,
+  OrderInModernNotificationDto,
+  CloseOrderReminderNotificationDto,
+  ModernClosingReminderNotificationDto,
+} from './dto/notification.dto';
 import { RolesGuard, Roles, UserRole } from '../auth/roles.guard';
 
 @ApiTags('notifications')
@@ -107,6 +118,109 @@ export class NotificationsController {
   @ApiOperation({ summary: 'Get notifications statistics' })
   async getStats(@Query() query: any) {
     return this.notificationsService.getStats(query);
+  }
+
+  // Endpoints для уведомлений мастерам
+  @Post('master-assigned')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Send master assigned notification (webhook)' })
+  async masterAssigned(@Body() dto: MasterAssignedNotificationDto) {
+    this.logger.log(`Master assigned notification: ${JSON.stringify(dto)}`);
+    
+    const webhookToken = process.env.WEBHOOK_TOKEN || 'your-webhook-secret';
+    if (dto.token !== webhookToken) {
+      return {
+        success: false,
+        message: 'Invalid webhook token',
+      };
+    }
+
+    return this.notificationsService.sendMasterAssignedNotification(dto);
+  }
+
+  @Post('order-accepted')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Send order accepted notification (webhook)' })
+  async orderAccepted(@Body() dto: OrderAcceptedNotificationDto) {
+    this.logger.log(`Order accepted notification: ${JSON.stringify(dto)}`);
+    
+    const webhookToken = process.env.WEBHOOK_TOKEN || 'your-webhook-secret';
+    if (dto.token !== webhookToken) {
+      return {
+        success: false,
+        message: 'Invalid webhook token',
+      };
+    }
+
+    return this.notificationsService.sendOrderAcceptedNotification(dto);
+  }
+
+  @Post('order-closed')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Send order closed notification (webhook)' })
+  async orderClosed(@Body() dto: OrderClosedNotificationDto) {
+    this.logger.log(`Order closed notification: ${JSON.stringify(dto)}`);
+    
+    const webhookToken = process.env.WEBHOOK_TOKEN || 'your-webhook-secret';
+    if (dto.token !== webhookToken) {
+      return {
+        success: false,
+        message: 'Invalid webhook token',
+      };
+    }
+
+    return this.notificationsService.sendOrderClosedNotification(dto);
+  }
+
+  @Post('order-in-modern')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Send order in modern notification (webhook)' })
+  async orderInModern(@Body() dto: OrderInModernNotificationDto) {
+    this.logger.log(`Order in modern notification: ${JSON.stringify(dto)}`);
+    
+    const webhookToken = process.env.WEBHOOK_TOKEN || 'your-webhook-secret';
+    if (dto.token !== webhookToken) {
+      return {
+        success: false,
+        message: 'Invalid webhook token',
+      };
+    }
+
+    return this.notificationsService.sendOrderInModernNotification(dto);
+  }
+
+  @Post('close-order-reminder')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Send close order reminder notification (webhook)' })
+  async closeOrderReminder(@Body() dto: CloseOrderReminderNotificationDto) {
+    this.logger.log(`Close order reminder notification: ${JSON.stringify(dto)}`);
+    
+    const webhookToken = process.env.WEBHOOK_TOKEN || 'your-webhook-secret';
+    if (dto.token !== webhookToken) {
+      return {
+        success: false,
+        message: 'Invalid webhook token',
+      };
+    }
+
+    return this.notificationsService.sendCloseOrderReminderNotification(dto);
+  }
+
+  @Post('modern-closing-reminder')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Send modern closing reminder notification (webhook)' })
+  async modernClosingReminder(@Body() dto: ModernClosingReminderNotificationDto) {
+    this.logger.log(`Modern closing reminder notification: ${JSON.stringify(dto)}`);
+    
+    const webhookToken = process.env.WEBHOOK_TOKEN || 'your-webhook-secret';
+    if (dto.token !== webhookToken) {
+      return {
+        success: false,
+        message: 'Invalid webhook token',
+      };
+    }
+
+    return this.notificationsService.sendModernClosingReminderNotification(dto);
   }
 }
 

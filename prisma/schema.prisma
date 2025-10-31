@@ -27,37 +27,52 @@ model Director {
   @@map("director")
 }
 
+// Настройки мастеров для уведомлений
+model Master {
+  id            Int           @id @default(autoincrement())
+  cities        String[]
+  name          String
+  login         String?       @unique
+  password      String?
+  passportDoc   String?       @map("passport_doc")
+  contractDoc   String?       @map("contract_doc")
+  statusWork    String        @map("status_work")
+  dateCreate    DateTime      @default(now()) @map("date_create")
+  note          String?
+  tgId          String?       @map("tg_id")
+  chatId        String?       @map("chat_id")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+  
+  notifications Notification[]
+  
+  @@map("master")
+}
+
 // История уведомлений
 model Notification {
   id              Int       @id @default(autoincrement())
-  type            String    // 'new_order', 'date_change', 'order_rejection'
+  type            String    // 'new_order', 'date_change', 'order_rejection', 'master_assigned', 'order_accepted', 'order_closed', 'order_in_modern', 'close_order_reminder', 'modern_closing_reminder'
   orderId         Int       @map("order_id")
-  directorId      Int       @map("director_id")
+  recipientType   String    @map("recipient_type") // 'director' или 'master'
+  directorId      Int?      @map("director_id")
+  masterId        Int?      @map("master_id")
   message         String
   status          String    @default("pending") // 'pending', 'sent', 'failed'
   sentAt          DateTime? @map("sent_at")
   errorMessage    String?   @map("error_message")
   createdAt       DateTime  @default(now()) @map("created_at")
   
-  director        Director  @relation(fields: [directorId], references: [id])
+  director        Director? @relation(fields: [directorId], references: [id])
+  master          Master?   @relation(fields: [masterId], references: [id])
   
   @@index([orderId])
   @@index([directorId])
+  @@index([masterId])
   @@index([type])
   @@index([status])
+  @@index([recipientType])
   @@map("notification")
-}
-
-// Шаблоны сообщений
-model MessageTemplate {
-  id              Int       @id @default(autoincrement())
-  type            String    @unique // 'new_order', 'date_change', 'order_rejection'
-  template        String    // Текст шаблона с плейсхолдерами
-  enabled         Boolean   @default(true)
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
-  
-  @@map("message_template")
 }
 
 // Для связи с заказами (read-only)
@@ -65,15 +80,26 @@ model Order {
   id                    Int       @id @default(autoincrement())
   rk                    String
   city                  String
+  avitoName             String?   @map("avito_name")
   phone                 String
-  clientName            String
+  typeOrder             String    @map("type_order")
+  clientName            String    @map("client_name")
   address               String
-  dateMeeting           String
-  statusOrder           String
-  masterId              Int?
-  operatorNameId        Int
-  createDate            DateTime  @default(now())
+  dateMeeting           DateTime  @map("date_meeting")
+  typeEquipment         String    @map("type_equipment")
+  problem               String
+  callRecord            String?   @map("call_record")
+  statusOrder           String    @map("status_order")
+  masterId              Int?      @map("master_id")
+  result                Decimal?  @db.Decimal(10, 2)
+  expenditure           Decimal?  @db.Decimal(10, 2)
+  operatorNameId        Int       @map("operator_name_id")
+  createDate            DateTime  @map("create_date")
+  closingData           DateTime? @map("closing_data")
+  dateClosmod           DateTime? @map("date_closmod")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
   
-  @@map("order")
+  @@map("orders")
 }
 
