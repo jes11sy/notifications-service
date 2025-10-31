@@ -8,6 +8,7 @@ import {
   DateChangeNotificationDto,
   OrderRejectionNotificationDto,
   MasterAssignedNotificationDto,
+  MasterReassignedNotificationDto,
   OrderAcceptedNotificationDto,
   OrderClosedNotificationDto,
   OrderInModernNotificationDto,
@@ -121,6 +122,23 @@ export class NotificationsController {
     }
 
     return this.notificationsService.sendMasterAssignedNotification(dto);
+  }
+
+  @Post('master-reassigned')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Send master reassigned notification (webhook)' })
+  async masterReassigned(@Body() dto: MasterReassignedNotificationDto, @Headers('x-webhook-token') token: string) {
+    this.logger.log(`Master reassigned notification: ${JSON.stringify(dto)}`);
+    
+    const webhookToken = process.env.WEBHOOK_TOKEN || 'your-webhook-secret';
+    if (token !== webhookToken) {
+      return {
+        success: false,
+        message: 'Invalid webhook token',
+      };
+    }
+
+    return this.notificationsService.sendMasterReassignedNotification(dto);
   }
 
   @Post('order-accepted')

@@ -7,6 +7,7 @@ import {
   DateChangeNotificationDto,
   OrderRejectionNotificationDto,
   MasterAssignedNotificationDto,
+  MasterReassignedNotificationDto,
   OrderAcceptedNotificationDto,
   OrderClosedNotificationDto,
   OrderInModernNotificationDto,
@@ -246,6 +247,15 @@ export class NotificationsService {
         address: dto.address || 'Не указано',
         dateMeeting: dto.dateMeeting ? new Date(dto.dateMeeting).toLocaleString('ru-RU') : 'Не указано',
       },
+    });
+  }
+
+  async sendMasterReassignedNotification(dto: MasterReassignedNotificationDto) {
+    return this.sendNotification({
+      type: 'master_reassigned',
+      orderId: dto.orderId,
+      masterId: dto.oldMasterId, // Отправляем старому мастеру
+      data: {},
     });
   }
 
