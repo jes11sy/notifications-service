@@ -213,15 +213,63 @@ export class NotificationsService {
   async sendOrderRejectionNotification(dto: OrderRejectionNotificationDto) {
     const results = [];
 
+    // Запрашиваем данные из БД, если не все поля переданы
+    let orderData = {
+      clientName: dto.clientName,
+      phone: dto.phone,
+      city: dto.city,
+      rk: dto.rk,
+      avitoName: dto.avitoName,
+      typeEquipment: dto.typeEquipment,
+      dateMeeting: dto.dateMeeting,
+      reason: dto.reason,
+    };
+
+    if (!dto.clientName || !dto.rk || !dto.typeEquipment || !dto.dateMeeting) {
+      try {
+        const order = await this.prisma.order.findUnique({
+          where: { id: dto.orderId },
+          select: {
+            clientName: true,
+            phone: true,
+            city: true,
+            rk: true,
+            avitoName: true,
+            typeEquipment: true,
+            dateMeeting: true,
+          },
+        });
+
+        if (order) {
+          orderData = {
+            clientName: dto.clientName || order.clientName,
+            phone: dto.phone || order.phone,
+            city: dto.city || order.city,
+            rk: dto.rk || order.rk,
+            avitoName: dto.avitoName || order.avitoName,
+            typeEquipment: dto.typeEquipment || order.typeEquipment,
+            dateMeeting: dto.dateMeeting || order.dateMeeting?.toISOString(),
+            reason: dto.reason,
+          };
+        }
+      } catch (error) {
+        this.logger.error(`Failed to fetch order data for order #${dto.orderId}: ${error.message}`);
+      }
+    }
+
     // Отправляем уведомление директору
     const directorResult = await this.sendNotification({
       type: 'order_rejection',
       orderId: dto.orderId,
-      city: dto.city,
+      city: orderData.city,
       data: {
-        clientName: dto.clientName,
-        phone: dto.phone,
-        reason: dto.reason,
+        clientName: orderData.clientName,
+        phone: orderData.phone,
+        reason: orderData.reason,
+        rk: orderData.rk,
+        avitoName: orderData.avitoName,
+        typeEquipment: orderData.typeEquipment,
+        dateMeeting: orderData.dateMeeting,
       },
     });
     results.push({ recipient: 'director', ...directorResult });
@@ -233,9 +281,13 @@ export class NotificationsService {
         orderId: dto.orderId,
         masterId: dto.masterId,
         data: {
-          clientName: dto.clientName,
-          phone: dto.phone,
-          reason: dto.reason,
+          clientName: orderData.clientName,
+          phone: orderData.phone,
+          reason: orderData.reason,
+          rk: orderData.rk,
+          avitoName: orderData.avitoName,
+          typeEquipment: orderData.typeEquipment,
+          dateMeeting: orderData.dateMeeting,
         },
       });
       results.push({ recipient: 'master', ...masterResult });
