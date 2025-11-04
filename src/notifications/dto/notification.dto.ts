@@ -279,14 +279,45 @@ export class OrderInModernNotificationDto {
   @IsNumber()
   masterId: number;
 
-  @ApiProperty()
+  @ApiProperty({ required: false })
   @IsDateString()
-  expectedClosingDate: string;
+  @IsOptional()
+  expectedClosingDate?: string;
 
   @ApiProperty({ required: false })
   @IsString()
   @IsOptional()
   clientName?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  rk?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  avitoName?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  typeEquipment?: string;
+
+  @ApiProperty({ required: false })
+  @IsDateString()
+  @IsOptional()
+  dateMeeting?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  prepayment?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  comment?: string;
 }
 
 export class CloseOrderReminderNotificationDto {
@@ -307,6 +338,26 @@ export class CloseOrderReminderNotificationDto {
   @IsNumber()
   @IsOptional()
   daysOverdue?: number;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  rk?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  avitoName?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  typeEquipment?: string;
+
+  @ApiProperty({ required: false })
+  @IsDateString()
+  @IsOptional()
+  dateMeeting?: string;
 }
 
 export class ModernClosingReminderNotificationDto {
@@ -318,9 +369,10 @@ export class ModernClosingReminderNotificationDto {
   @IsNumber()
   masterId: number;
 
-  @ApiProperty()
+  @ApiProperty({ required: false })
   @IsDateString()
-  expectedClosingDate: string;
+  @IsOptional()
+  expectedClosingDate?: string;
 
   @ApiProperty({ required: false })
   @IsString()
@@ -331,5 +383,25 @@ export class ModernClosingReminderNotificationDto {
   @IsNumber()
   @IsOptional()
   daysUntilClosing?: number;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  rk?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  avitoName?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  typeEquipment?: string;
+
+  @ApiProperty({ required: false })
+  @IsDateString()
+  @IsOptional()
+  dateMeeting?: string;
 }
 
