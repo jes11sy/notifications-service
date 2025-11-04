@@ -20,14 +20,24 @@ export const MESSAGE_TEMPLATES = {
 
   date_change: {
     recipientType: 'both', // и директор и мастер
-    format: (data: any) => `📅 Заказ №${data.orderId} перенесен на ${data.newDate}
+    format: (data: any) => {
+      const newDate = data.newDate ? new Date(data.newDate).toLocaleString('ru-RU', { 
+        day: '2-digit', 
+        month: '2-digit', 
+        year: 'numeric', 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      }) : 'Не указано';
 
-РК: ${data.rk || 'Не указано'}
-Авито: ${data.avitoName || 'Не указано'}
-Направление: ${data.typeEquipment || 'БТ'}
+      return `📅 Заказ №${data.orderId} перенесен на ${newDate}
+
+РК: ${data.rk && data.rk.trim() ? data.rk : 'Не указано'}
+Авито: ${data.avitoName && data.avitoName.trim() ? data.avitoName : 'Не указано'}
+Направление: ${data.typeEquipment && data.typeEquipment.trim() ? data.typeEquipment : 'БТ'}
 
 👤 Клиент: ${data.clientName}
-🗓 Дата встречи: ${data.newDate}${data.city ? `\n🏙 Город: ${data.city}` : ''}`,
+🗓 Дата встречи: ${newDate}${data.city ? `\n🏙 Город: ${data.city}` : ''}`;
+    },
   },
 
   order_rejection: {
@@ -38,30 +48,48 @@ export const MESSAGE_TEMPLATES = {
         ? `❌ Заказ №${data.orderId} Мастер отказался`
         : `❌ Заказ №${data.orderId} Отменен`;
       
+      const dateMeeting = data.dateMeeting ? new Date(data.dateMeeting).toLocaleString('ru-RU', { 
+        day: '2-digit', 
+        month: '2-digit', 
+        year: 'numeric', 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      }) : 'Не указано';
+
       return `${title}
 
-РК: ${data.rk || 'Не указано'}
-Авито: ${data.avitoName || 'Не указано'}
-Направление: ${data.typeEquipment || 'БТ'}
+РК: ${data.rk && data.rk.trim() ? data.rk : 'Не указано'}
+Авито: ${data.avitoName && data.avitoName.trim() ? data.avitoName : 'Не указано'}
+Направление: ${data.typeEquipment && data.typeEquipment.trim() ? data.typeEquipment : 'БТ'}
 
 👤 Клиент: ${data.clientName}
-🗓 Дата встречи: ${data.dateMeeting || 'Не указано'}${data.city ? `\n🏙 Город: ${data.city}` : ''}`;
+🗓 Дата встречи: ${dateMeeting}${data.city ? `\n🏙 Город: ${data.city}` : ''}`;
     },
   },
 
   // Шаблоны для мастеров
   master_assigned: {
     recipientType: 'master',
-    format: (data: any) => `👷 Вам назначен заказ №${data.orderId}
+    format: (data: any) => {
+      const dateMeeting = data.dateMeeting ? new Date(data.dateMeeting).toLocaleString('ru-RU', { 
+        day: '2-digit', 
+        month: '2-digit', 
+        year: 'numeric', 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      }) : 'Не указано';
 
-РК: ${data.rk || 'Не указано'}
-Авито: ${data.avitoName || 'Не указано'}
-Направление: ${data.typeEquipment || 'БТ'}
+      return `👷 Вам назначен заказ №${data.orderId}
 
-👤 Клиент: ${data.clientName || 'Не указано'}
-🗓 Дата встречи: ${data.dateMeeting || 'Не указано'}
+РК: ${data.rk && data.rk.trim() ? data.rk : 'Не указано'}
+Авито: ${data.avitoName && data.avitoName.trim() ? data.avitoName : 'Не указано'}
+Направление: ${data.typeEquipment && data.typeEquipment.trim() ? data.typeEquipment : 'БТ'}
 
-⚠️ Подтвердите принятие заказа!`,
+👤 Клиент: ${data.clientName && data.clientName.trim() ? data.clientName : 'Не указано'}
+🗓 Дата встречи: ${dateMeeting}
+
+⚠️ Подтвердите принятие заказа!`;
+    },
   },
 
   master_reassigned: {
@@ -71,14 +99,24 @@ export const MESSAGE_TEMPLATES = {
 
   order_accepted: {
     recipientType: 'master',
-    format: (data: any) => `✅ Заказ №${data.orderId} принят
+    format: (data: any) => {
+      const dateMeeting = data.dateMeeting ? new Date(data.dateMeeting).toLocaleString('ru-RU', { 
+        day: '2-digit', 
+        month: '2-digit', 
+        year: 'numeric', 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      }) : 'Не указано';
 
-РК: ${data.rk || 'Не указано'}
-Авито: ${data.avitoName || 'Не указано'}
-Направление: ${data.typeEquipment || 'БТ'}
+      return `✅ Заказ №${data.orderId} принят
 
-👤 Клиент: ${data.clientName || 'Не указано'}
-🗓 Дата встречи: ${data.dateMeeting || 'Не указано'}`,
+РК: ${data.rk && data.rk.trim() ? data.rk : 'Не указано'}
+Авито: ${data.avitoName && data.avitoName.trim() ? data.avitoName : 'Не указано'}
+Направление: ${data.typeEquipment && data.typeEquipment.trim() ? data.typeEquipment : 'БТ'}
+
+👤 Клиент: ${data.clientName && data.clientName.trim() ? data.clientName : 'Не указано'}
+🗓 Дата встречи: ${dateMeeting}`;
+    },
   },
 
   order_closed: {
@@ -96,40 +134,80 @@ export const MESSAGE_TEMPLATES = {
 
   order_in_modern: {
     recipientType: 'master',
-    format: (data: any) => `🕐 Заказ №${data.orderId} в модерне
+    format: (data: any) => {
+      const dateMeeting = data.dateMeeting ? new Date(data.dateMeeting).toLocaleString('ru-RU', { 
+        day: '2-digit', 
+        month: '2-digit', 
+        year: 'numeric', 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      }) : 'Не указано';
+      
+      const expectedClosingDate = data.expectedClosingDate ? new Date(data.expectedClosingDate).toLocaleDateString('ru-RU', { 
+        day: '2-digit', 
+        month: '2-digit', 
+        year: 'numeric'
+      }) : 'Не указано';
 
-РК: ${data.rk || 'Не указано'}
-Авито: ${data.avitoName || 'Не указано'}
-Направление: ${data.typeEquipment || 'БТ'}
+      return `🕐 Заказ №${data.orderId} в модерне
+
+РК: ${data.rk && data.rk.trim() ? data.rk : 'Не указано'}
+Авито: ${data.avitoName && data.avitoName.trim() ? data.avitoName : 'Не указано'}
+Направление: ${data.typeEquipment && data.typeEquipment.trim() ? data.typeEquipment : 'БТ'}
 
 👤 Клиент: ${data.clientName}
-🗓 Дата встречи: ${data.dateMeeting || 'Не указано'}
+🗓 Дата встречи: ${dateMeeting}
 💳 Предоплата: ${data.prepayment || 'Не указано'}
-📆 Дата закрытия: ${data.expectedClosingDate}
-💬 Комментарий: ${data.comment || 'Не указано'}`,
+📆 Дата закрытия: ${expectedClosingDate}
+💬 Комментарий: ${data.comment && data.comment.trim() ? data.comment : 'Не указано'}`;
+    },
   },
 
   close_order_reminder: {
     recipientType: 'master',
-    format: (data: any) => `⚠️ Закройте заказ №${data.orderId}
+    format: (data: any) => {
+      const dateMeeting = data.dateMeeting ? new Date(data.dateMeeting).toLocaleString('ru-RU', { 
+        day: '2-digit', 
+        month: '2-digit', 
+        year: 'numeric', 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      }) : 'Не указано';
 
-РК: ${data.rk || 'Не указано'}
-Авито: ${data.avitoName || 'Не указано'}
-Направление: ${data.typeEquipment || 'БТ'}
+      return `⚠️ Закройте заказ №${data.orderId}
+
+РК: ${data.rk && data.rk.trim() ? data.rk : 'Не указано'}
+Авито: ${data.avitoName && data.avitoName.trim() ? data.avitoName : 'Не указано'}
+Направление: ${data.typeEquipment && data.typeEquipment.trim() ? data.typeEquipment : 'БТ'}
 
 👤 Клиент: ${data.clientName}
-🗓 Дата встречи: ${data.dateMeeting || 'Не указано'}
-⏰ Просрочен на ${data.daysOverdue} дн.`,
+🗓 Дата встречи: ${dateMeeting}
+⏰ Просрочен на ${data.daysOverdue} дн.`;
+    },
   },
 
   modern_closing_reminder: {
     recipientType: 'master',
     format: (data: any) => {
+      const dateMeeting = data.dateMeeting ? new Date(data.dateMeeting).toLocaleString('ru-RU', { 
+        day: '2-digit', 
+        month: '2-digit', 
+        year: 'numeric', 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      }) : 'Не указано';
+      
+      const expectedClosingDate = data.expectedClosingDate ? new Date(data.expectedClosingDate).toLocaleDateString('ru-RU', { 
+        day: '2-digit', 
+        month: '2-digit', 
+        year: 'numeric'
+      }) : 'Не указано';
+
       const daysInfo = data.daysUntilClosing < 0 
         ? `⚠️ Просрочено на ${Math.abs(data.daysUntilClosing)} дн.`
-        : data.daysUntilClosing === 0 && data.expectedClosingDate !== 'Не указано'
+        : data.daysUntilClosing === 0 && expectedClosingDate !== 'Не указано'
         ? '⏰ Сегодня день закрытия!'
-        : data.expectedClosingDate === 'Не указано'
+        : expectedClosingDate === 'Не указано'
         ? '⚠️ Нужно закрыть модерн!'
         : `⏰ Осталось дней: ${data.daysUntilClosing}`;
 
@@ -137,13 +215,13 @@ export const MESSAGE_TEMPLATES = {
 
 📋 Заказ №${data.orderId}
 
-РК: ${data.rk || 'Не указано'}
-Авито: ${data.avitoName || 'Не указано'}
-Направление: ${data.typeEquipment || 'БТ'}
+РК: ${data.rk && data.rk.trim() ? data.rk : 'Не указано'}
+Авито: ${data.avitoName && data.avitoName.trim() ? data.avitoName : 'Не указано'}
+Направление: ${data.typeEquipment && data.typeEquipment.trim() ? data.typeEquipment : 'БТ'}
 
 👤 Клиент: ${data.clientName}
-🗓 Дата встречи: ${data.dateMeeting || 'Не указано'}
-📅 Дата закрытия: ${data.expectedClosingDate}
+🗓 Дата встречи: ${dateMeeting}
+📅 Дата закрытия: ${expectedClosingDate}
 ${daysInfo}`;
     },
   },
