@@ -18,7 +18,7 @@ export class TelegramService {
     }
   }
 
-  async sendMessage(chatId: string, text: string): Promise<boolean> {
+  async sendMessage(chatId: string, text: string, buttons?: Array<{text: string, url: string}>): Promise<boolean> {
     if (!this.botToken) {
       this.logger.error('Telegram bot token not configured');
       return false;
@@ -27,11 +27,25 @@ export class TelegramService {
     try {
       const url = `${this.apiUrl}/bot${this.botToken}/sendMessage`;
       
-      const response = await axios.post(url, {
+      const payload: any = {
         chat_id: chatId,
         text: text,
         parse_mode: 'HTML',
-      }, {
+      };
+
+      // Добавляем inline кнопки если есть
+      if (buttons && buttons.length > 0) {
+        payload.reply_markup = {
+          inline_keyboard: [
+            buttons.map(btn => ({
+              text: btn.text,
+              url: btn.url,
+            }))
+          ]
+        };
+      }
+
+      const response = await axios.post(url, payload, {
         timeout: 10000,
       });
 

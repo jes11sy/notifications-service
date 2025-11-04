@@ -22,15 +22,24 @@ export const MESSAGE_TEMPLATES = {
     recipientType: 'both', // и директор и мастер
     format: (data: any) => `📅 Заказ №${data.orderId} перенесен на ${data.newDate}
 
-👤 Клиент: ${data.clientName}${data.city ? `\n🏙 Город: ${data.city}` : ''}`,
+РК: ${data.rk || 'Не указано'}
+Авито: ${data.avitoName || 'Не указано'}
+Направление: ${data.typeEquipment || 'БТ'}
+
+👤 Клиент: ${data.clientName}
+🗓 Дата встречи: ${data.newDate}${data.city ? `\n🏙 Город: ${data.city}` : ''}`,
   },
 
   order_rejection: {
     recipientType: 'both', // и директор и мастер
     format: (data: any) => `❌ Заказ №${data.orderId} Отменен
 
+РК: ${data.rk || 'Не указано'}
+Авито: ${data.avitoName || 'Не указано'}
+Направление: ${data.typeEquipment || 'БТ'}
+
 👤 Клиент: ${data.clientName}
-📞 Телефон: ${data.phone}
+🗓 Дата встречи: ${data.dateMeeting || 'Не указано'}
 💬 Причина: ${data.reason}${data.city ? `\n🏙 Город: ${data.city}` : ''}`,
   },
 
@@ -44,10 +53,9 @@ export const MESSAGE_TEMPLATES = {
 Направление: ${data.typeEquipment || 'БТ'}
 
 👤 Клиент: ${data.clientName || 'Не указано'}
-📍 Адрес: ${data.address || 'Не указано'}
 🗓 Дата встречи: ${data.dateMeeting || 'Не указано'}
 
-⚠️ Подтвердите принятие заказа в ЦРМ!`,
+⚠️ Подтвердите принятие заказа!`,
   },
 
   master_reassigned: {
@@ -59,7 +67,12 @@ export const MESSAGE_TEMPLATES = {
     recipientType: 'master',
     format: (data: any) => `✅ Заказ №${data.orderId} принят
 
-👤 Клиент: ${data.clientName}`,
+РК: ${data.rk || 'Не указано'}
+Авито: ${data.avitoName || 'Не указано'}
+Направление: ${data.typeEquipment || 'БТ'}
+
+👤 Клиент: ${data.clientName || 'Не указано'}
+🗓 Дата встречи: ${data.dateMeeting || 'Не указано'}`,
   },
 
   order_closed: {
@@ -67,22 +80,39 @@ export const MESSAGE_TEMPLATES = {
     format: (data: any) => `🔒 Заказ №${data.orderId} закрыт
 
 👤 Клиент: ${data.clientName}
-📅 Дата закрытия: ${data.closingDate}`,
+📅 Дата закрытия: ${data.closingDate}
+
+💰 Итог: ${data.total || 'Не указано'}
+📉 Расход: ${data.expense || 'Не указано'}
+💵 Чистыми: ${data.net || 'Не указано'}
+🔄 Сдача мастера: ${data.handover || 'Не указано'}`,
   },
 
   order_in_modern: {
     recipientType: 'master',
     format: (data: any) => `🕐 Заказ №${data.orderId} в модерне
 
+РК: ${data.rk || 'Не указано'}
+Авито: ${data.avitoName || 'Не указано'}
+Направление: ${data.typeEquipment || 'БТ'}
+
 👤 Клиент: ${data.clientName}
-📆 Ожидаемая дата закрытия: ${data.expectedClosingDate}`,
+🗓 Дата встречи: ${data.dateMeeting || 'Не указано'}
+💳 Предоплата: ${data.prepayment || 'Не указано'}
+📆 Дата закрытия: ${data.expectedClosingDate}
+💬 Комментарий: ${data.comment || 'Не указано'}`,
   },
 
   close_order_reminder: {
     recipientType: 'master',
     format: (data: any) => `⚠️ Закройте заказ №${data.orderId}
 
+РК: ${data.rk || 'Не указано'}
+Авито: ${data.avitoName || 'Не указано'}
+Направление: ${data.typeEquipment || 'БТ'}
+
 👤 Клиент: ${data.clientName}
+🗓 Дата встречи: ${data.dateMeeting || 'Не указано'}
 ⏰ Просрочен на ${data.daysOverdue} дн.`,
   },
 
@@ -100,7 +130,13 @@ export const MESSAGE_TEMPLATES = {
       return `📆 Напоминание о закрытии модерна
 
 📋 Заказ №${data.orderId}
+
+РК: ${data.rk || 'Не указано'}
+Авито: ${data.avitoName || 'Не указано'}
+Направление: ${data.typeEquipment || 'БТ'}
+
 👤 Клиент: ${data.clientName}
+🗓 Дата встречи: ${data.dateMeeting || 'Не указано'}
 📅 Дата закрытия: ${data.expectedClosingDate}
 ${daysInfo}`;
     },

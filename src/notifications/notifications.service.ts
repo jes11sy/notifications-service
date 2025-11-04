@@ -62,10 +62,16 @@ export class NotificationsService {
       // Формируем сообщение
       const message = template.format(messageData);
 
+      // Добавляем кнопку со ссылкой на заказ для директоров
+      const directorButtons: Array<{text: string, url: string}> = [{
+        text: '📋 Открыть заказ',
+        url: `https://new.lead-schem.ru/orders/${orderId}`
+      }];
+
       // Отправляем уведомления всем директорам
       for (const director of directors) {
       try {
-        const sent = await this.telegram.sendMessage(director.tgId, message);
+        const sent = await this.telegram.sendMessage(director.tgId, message, directorButtons);
 
         results.push({
           recipientType: 'director',
@@ -111,8 +117,17 @@ export class NotificationsService {
       // Формируем сообщение
       const message = template.format(messageData);
 
+      // Добавляем кнопку со ссылкой на заказ для определенных типов уведомлений
+      let buttons: Array<{text: string, url: string}> | undefined;
+      if (['master_assigned', 'close_order_reminder', 'modern_closing_reminder'].includes(type as string)) {
+        buttons = [{
+          text: '📋 Открыть заказ',
+          url: `https://lead-schem.ru/orders/${orderId}`
+        }];
+      }
+
       try {
-        const sent = await this.telegram.sendMessage(master.chatId, message);
+        const sent = await this.telegram.sendMessage(master.chatId, message, buttons);
 
         results.push({
           recipientType: 'master',
