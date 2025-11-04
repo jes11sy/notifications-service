@@ -208,6 +208,26 @@ export class OrderAcceptedNotificationDto {
   @IsString()
   @IsOptional()
   clientName?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  rk?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  avitoName?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  typeEquipment?: string;
+
+  @ApiProperty({ required: false })
+  @IsDateString()
+  @IsOptional()
+  dateMeeting?: string;
 }
 
 export class OrderClosedNotificationDto {
@@ -228,6 +248,26 @@ export class OrderClosedNotificationDto {
   @IsDateString()
   @IsOptional()
   closingDate?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  total?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  expense?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  net?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  handover?: string;
 }
 
 export class OrderInModernNotificationDto {

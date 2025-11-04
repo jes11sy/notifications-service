@@ -65,6 +65,8 @@ model Order {
   masterId              Int?      @map("master_id")
   result                Decimal?  @db.Decimal(10, 2)
   expenditure           Decimal?  @db.Decimal(10, 2)
+  clean                 Decimal?  @db.Decimal(10, 2)
+  masterChange          Decimal?  @map("master_change") @db.Decimal(10, 2)
   operatorNameId        Int       @map("operator_name_id")
   createDate            DateTime  @map("create_date")
   closingData           DateTime? @map("closing_data")

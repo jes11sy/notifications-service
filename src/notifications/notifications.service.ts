@@ -275,61 +275,278 @@ export class NotificationsService {
   }
 
   async sendOrderAcceptedNotification(dto: OrderAcceptedNotificationDto) {
+    // Если данные не переданы, запрашиваем из БД
+    let orderData = {
+      clientName: dto.clientName,
+      rk: dto.rk,
+      avitoName: dto.avitoName,
+      typeEquipment: dto.typeEquipment,
+      dateMeeting: dto.dateMeeting,
+    };
+
+    // Если хотя бы одно поле не указано - запрашиваем заказ из БД
+    if (!dto.clientName || !dto.rk || !dto.typeEquipment || !dto.dateMeeting) {
+      try {
+        const order = await this.prisma.order.findUnique({
+          where: { id: dto.orderId },
+          select: {
+            clientName: true,
+            rk: true,
+            avitoName: true,
+            typeEquipment: true,
+            dateMeeting: true,
+          },
+        });
+
+        if (order) {
+          orderData = {
+            clientName: dto.clientName || order.clientName,
+            rk: dto.rk || order.rk,
+            avitoName: dto.avitoName || order.avitoName,
+            typeEquipment: dto.typeEquipment || order.typeEquipment,
+            dateMeeting: dto.dateMeeting || order.dateMeeting?.toISOString(),
+          };
+        }
+      } catch (error) {
+        this.logger.error(`Failed to fetch order data for order #${dto.orderId}: ${error.message}`);
+      }
+    }
+
     return this.sendNotification({
       type: 'order_accepted',
       orderId: dto.orderId,
       masterId: dto.masterId,
       data: {
-        clientName: dto.clientName || 'Не указано',
+        clientName: orderData.clientName || 'Не указано',
+        rk: orderData.rk || undefined,
+        avitoName: orderData.avitoName || undefined,
+        typeEquipment: orderData.typeEquipment || undefined,
+        dateMeeting: orderData.dateMeeting ? new Date(orderData.dateMeeting).toLocaleString('ru-RU') : undefined,
       },
     });
   }
 
   async sendOrderClosedNotification(dto: OrderClosedNotificationDto) {
+    // Если данные не переданы, запрашиваем из БД
+    let orderData = {
+      clientName: dto.clientName,
+      closingDate: dto.closingDate,
+      total: dto.total,
+      expense: dto.expense,
+      net: dto.net,
+      handover: dto.handover,
+    };
+
+    // Если хотя бы одно поле не указано - запрашиваем заказ из БД
+    if (!dto.clientName || !dto.total || !dto.expense || !dto.net || !dto.handover) {
+      try {
+        const order = await this.prisma.order.findUnique({
+          where: { id: dto.orderId },
+          select: {
+            clientName: true,
+            result: true,
+            expenditure: true,
+            clean: true,
+            masterChange: true,
+            closingData: true,
+          },
+        });
+
+        if (order) {
+          orderData = {
+            clientName: dto.clientName || order.clientName,
+            closingDate: dto.closingDate || order.closingData?.toISOString(),
+            total: dto.total || order.result?.toString(),
+            expense: dto.expense || order.expenditure?.toString(),
+            net: dto.net || order.clean?.toString(),
+            handover: dto.handover || order.masterChange?.toString(),
+          };
+        }
+      } catch (error) {
+        this.logger.error(`Failed to fetch order data for order #${dto.orderId}: ${error.message}`);
+      }
+    }
+
     return this.sendNotification({
       type: 'order_closed',
       orderId: dto.orderId,
       masterId: dto.masterId,
       data: {
-        clientName: dto.clientName || 'Не указано',
-        closingDate: dto.closingDate ? new Date(dto.closingDate).toLocaleString('ru-RU') : new Date().toLocaleString('ru-RU'),
+        clientName: orderData.clientName || 'Не указано',
+        closingDate: orderData.closingDate ? new Date(orderData.closingDate).toLocaleString('ru-RU') : new Date().toLocaleString('ru-RU'),
+        total: orderData.total || undefined,
+        expense: orderData.expense || undefined,
+        net: orderData.net || undefined,
+        handover: orderData.handover || undefined,
       },
     });
   }
 
   async sendOrderInModernNotification(dto: OrderInModernNotificationDto) {
+    // Если данные не переданы, запрашиваем из БД
+    let orderData = {
+      clientName: dto.clientName,
+      rk: dto.rk,
+      avitoName: dto.avitoName,
+      typeEquipment: dto.typeEquipment,
+      dateMeeting: dto.dateMeeting,
+      prepayment: dto.prepayment,
+      expectedClosingDate: dto.expectedClosingDate,
+      comment: dto.comment,
+    };
+
+    if (!dto.clientName || !dto.rk || !dto.typeEquipment || !dto.dateMeeting) {
+      try {
+        const order = await this.prisma.order.findUnique({
+          where: { id: dto.orderId },
+          select: {
+            clientName: true,
+            rk: true,
+            avitoName: true,
+            typeEquipment: true,
+            dateMeeting: true,
+            dateClosmod: true,
+          },
+        });
+
+        if (order) {
+          orderData = {
+            clientName: dto.clientName || order.clientName,
+            rk: dto.rk || order.rk,
+            avitoName: dto.avitoName || order.avitoName,
+            typeEquipment: dto.typeEquipment || order.typeEquipment,
+            dateMeeting: dto.dateMeeting || order.dateMeeting?.toISOString(),
+            prepayment: dto.prepayment,
+            expectedClosingDate: dto.expectedClosingDate || order.dateClosmod?.toISOString(),
+            comment: dto.comment,
+          };
+        }
+      } catch (error) {
+        this.logger.error(`Failed to fetch order data for order #${dto.orderId}: ${error.message}`);
+      }
+    }
+
     return this.sendNotification({
       type: 'order_in_modern',
       orderId: dto.orderId,
       masterId: dto.masterId,
       data: {
-        clientName: dto.clientName || 'Не указано',
-        expectedClosingDate: new Date(dto.expectedClosingDate).toLocaleString('ru-RU'),
+        clientName: orderData.clientName || 'Не указано',
+        rk: orderData.rk || undefined,
+        avitoName: orderData.avitoName || undefined,
+        typeEquipment: orderData.typeEquipment || undefined,
+        dateMeeting: orderData.dateMeeting ? new Date(orderData.dateMeeting).toLocaleString('ru-RU') : undefined,
+        prepayment: orderData.prepayment || undefined,
+        expectedClosingDate: orderData.expectedClosingDate ? new Date(orderData.expectedClosingDate).toLocaleString('ru-RU') : undefined,
+        comment: orderData.comment || undefined,
       },
     });
   }
 
   async sendCloseOrderReminderNotification(dto: CloseOrderReminderNotificationDto) {
+    // Запрашиваем данные заказа из БД для полноты информации
+    let orderData = {
+      clientName: dto.clientName,
+      rk: undefined as string | undefined,
+      avitoName: undefined as string | undefined,
+      typeEquipment: undefined as string | undefined,
+      dateMeeting: undefined as string | undefined,
+      daysOverdue: dto.daysOverdue || 0,
+    };
+
+    try {
+      const order = await this.prisma.order.findUnique({
+        where: { id: dto.orderId },
+        select: {
+          clientName: true,
+          rk: true,
+          avitoName: true,
+          typeEquipment: true,
+          dateMeeting: true,
+        },
+      });
+
+      if (order) {
+        orderData = {
+          clientName: dto.clientName || order.clientName,
+          rk: order.rk,
+          avitoName: order.avitoName,
+          typeEquipment: order.typeEquipment,
+          dateMeeting: order.dateMeeting?.toISOString(),
+          daysOverdue: dto.daysOverdue || 0,
+        };
+      }
+    } catch (error) {
+      this.logger.error(`Failed to fetch order data for order #${dto.orderId}: ${error.message}`);
+    }
+
     return this.sendNotification({
       type: 'close_order_reminder',
       orderId: dto.orderId,
       masterId: dto.masterId,
       data: {
-        clientName: dto.clientName || 'Не указано',
-        daysOverdue: dto.daysOverdue || 0,
+        clientName: orderData.clientName || 'Не указано',
+        rk: orderData.rk || undefined,
+        avitoName: orderData.avitoName || undefined,
+        typeEquipment: orderData.typeEquipment || undefined,
+        dateMeeting: orderData.dateMeeting ? new Date(orderData.dateMeeting).toLocaleString('ru-RU') : undefined,
+        daysOverdue: orderData.daysOverdue,
       },
     });
   }
 
   async sendModernClosingReminderNotification(dto: ModernClosingReminderNotificationDto) {
+    // Запрашиваем данные заказа из БД для полноты информации
+    let orderData = {
+      clientName: dto.clientName,
+      rk: undefined as string | undefined,
+      avitoName: undefined as string | undefined,
+      typeEquipment: undefined as string | undefined,
+      dateMeeting: undefined as string | undefined,
+      expectedClosingDate: dto.expectedClosingDate,
+      daysUntilClosing: dto.daysUntilClosing || 0,
+    };
+
+    try {
+      const order = await this.prisma.order.findUnique({
+        where: { id: dto.orderId },
+        select: {
+          clientName: true,
+          rk: true,
+          avitoName: true,
+          typeEquipment: true,
+          dateMeeting: true,
+          dateClosmod: true,
+        },
+      });
+
+      if (order) {
+        orderData = {
+          clientName: dto.clientName || order.clientName,
+          rk: order.rk,
+          avitoName: order.avitoName,
+          typeEquipment: order.typeEquipment,
+          dateMeeting: order.dateMeeting?.toISOString(),
+          expectedClosingDate: dto.expectedClosingDate || order.dateClosmod?.toISOString(),
+          daysUntilClosing: dto.daysUntilClosing || 0,
+        };
+      }
+    } catch (error) {
+      this.logger.error(`Failed to fetch order data for order #${dto.orderId}: ${error.message}`);
+    }
+
     return this.sendNotification({
       type: 'modern_closing_reminder',
       orderId: dto.orderId,
       masterId: dto.masterId,
       data: {
-        clientName: dto.clientName || 'Не указано',
-        expectedClosingDate: new Date(dto.expectedClosingDate).toLocaleString('ru-RU'),
-        daysUntilClosing: dto.daysUntilClosing || 0,
+        clientName: orderData.clientName || 'Не указано',
+        rk: orderData.rk || undefined,
+        avitoName: orderData.avitoName || undefined,
+        typeEquipment: orderData.typeEquipment || undefined,
+        dateMeeting: orderData.dateMeeting ? new Date(orderData.dateMeeting).toLocaleString('ru-RU') : undefined,
+        expectedClosingDate: orderData.expectedClosingDate ? new Date(orderData.expectedClosingDate).toLocaleString('ru-RU') : undefined,
+        daysUntilClosing: orderData.daysUntilClosing,
       },
     });
   }
