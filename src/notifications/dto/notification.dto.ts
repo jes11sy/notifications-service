@@ -142,6 +142,26 @@ export class OrderRejectionNotificationDto {
   @IsNumber()
   @IsOptional()
   masterId?: number;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  rk?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  avitoName?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  typeEquipment?: string;
+
+  @ApiProperty({ required: false })
+  @IsDateString()
+  @IsOptional()
+  dateMeeting?: string;
 }
 
 // DTO для уведомлений мастерам
