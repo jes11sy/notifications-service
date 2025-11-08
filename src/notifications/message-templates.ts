@@ -115,6 +115,8 @@ export const MESSAGE_TEMPLATES = {
 Направление: ${data.typeEquipment && data.typeEquipment.trim() ? data.typeEquipment : 'БТ'}
 
 👤 Клиент: ${data.clientName && data.clientName.trim() ? data.clientName : 'Не указано'}
+📞 Номер: ${data.phone || 'Не указано'}
+📍 Адрес: ${data.address || 'Не указано'}
 🗓 Дата встречи: ${dateMeeting}`;
     },
   },

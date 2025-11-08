@@ -163,7 +163,13 @@ export class NotificationsService {
         clientName: dto.clientName,
         phone: dto.phone,
         address: dto.address,
-        dateMeeting: new Date(dto.dateMeeting).toLocaleString('ru-RU'),
+        dateMeeting: new Date(dto.dateMeeting).toLocaleString('ru-RU', { 
+          day: '2-digit', 
+          month: '2-digit', 
+          year: 'numeric', 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        }),
         problem: dto.problem,
         rk: dto.rk || 'Не указано',
         avitoName: dto.avitoName || 'Не указано',
@@ -175,6 +181,42 @@ export class NotificationsService {
   async sendDateChangeNotification(dto: DateChangeNotificationDto) {
     const results = [];
 
+    const dateFormat = { 
+      day: '2-digit', 
+      month: '2-digit', 
+      year: 'numeric', 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    } as const;
+
+    // Загружаем данные заказа из БД
+    let orderData = {
+      rk: undefined as string | undefined,
+      avitoName: undefined as string | undefined,
+      typeEquipment: undefined as string | undefined,
+    };
+
+    try {
+      const order = await this.prisma.order.findUnique({
+        where: { id: dto.orderId },
+        select: {
+          rk: true,
+          avitoName: true,
+          typeEquipment: true,
+        },
+      });
+
+      if (order) {
+        orderData = {
+          rk: order.rk,
+          avitoName: order.avitoName,
+          typeEquipment: order.typeEquipment,
+        };
+      }
+    } catch (error) {
+      this.logger.error(`Failed to fetch order data for order #${dto.orderId}: ${error.message}`);
+    }
+
     // Отправляем уведомление директору
     const directorResult = await this.sendNotification({
       type: 'date_change',
@@ -182,8 +224,11 @@ export class NotificationsService {
       city: dto.city,
       data: {
         clientName: dto.clientName,
-        newDate: new Date(dto.newDate).toLocaleString('ru-RU'),
-        oldDate: dto.oldDate ? new Date(dto.oldDate).toLocaleString('ru-RU') : 'Не указано',
+        rk: orderData.rk,
+        avitoName: orderData.avitoName,
+        typeEquipment: orderData.typeEquipment,
+        newDate: new Date(dto.newDate).toLocaleString('ru-RU', dateFormat),
+        oldDate: dto.oldDate ? new Date(dto.oldDate).toLocaleString('ru-RU', dateFormat) : 'Не указано',
       },
     });
     results.push({ recipient: 'director', ...directorResult });
@@ -196,8 +241,11 @@ export class NotificationsService {
         masterId: dto.masterId,
         data: {
           clientName: dto.clientName,
-          newDate: new Date(dto.newDate).toLocaleString('ru-RU'),
-          oldDate: dto.oldDate ? new Date(dto.oldDate).toLocaleString('ru-RU') : 'Не указано',
+          rk: orderData.rk,
+          avitoName: orderData.avitoName,
+          typeEquipment: orderData.typeEquipment,
+          newDate: new Date(dto.newDate).toLocaleString('ru-RU', dateFormat),
+          oldDate: dto.oldDate ? new Date(dto.oldDate).toLocaleString('ru-RU', dateFormat) : 'Не указано',
         },
       });
       results.push({ recipient: 'master', ...masterResult });
@@ -312,7 +360,13 @@ export class NotificationsService {
         typeEquipment: dto.typeEquipment || 'БТ',
         clientName: dto.clientName || 'Не указано',
         address: dto.address || 'Не указано',
-        dateMeeting: dto.dateMeeting ? new Date(dto.dateMeeting).toLocaleString('ru-RU') : 'Не указано',
+        dateMeeting: dto.dateMeeting ? new Date(dto.dateMeeting).toLocaleString('ru-RU', { 
+          day: '2-digit', 
+          month: '2-digit', 
+          year: 'numeric', 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        }) : 'Не указано',
       },
     });
   }
@@ -330,6 +384,8 @@ export class NotificationsService {
     // Если данные не переданы, запрашиваем из БД
     let orderData = {
       clientName: dto.clientName,
+      phone: undefined as string | undefined,
+      address: undefined as string | undefined,
       rk: dto.rk,
       avitoName: dto.avitoName,
       typeEquipment: dto.typeEquipment,
@@ -343,6 +399,8 @@ export class NotificationsService {
           where: { id: dto.orderId },
           select: {
             clientName: true,
+            phone: true,
+            address: true,
             rk: true,
             avitoName: true,
             typeEquipment: true,
@@ -353,6 +411,8 @@ export class NotificationsService {
         if (order) {
           orderData = {
             clientName: dto.clientName || order.clientName,
+            phone: order.phone,
+            address: order.address,
             rk: dto.rk || order.rk,
             avitoName: dto.avitoName || order.avitoName,
             typeEquipment: dto.typeEquipment || order.typeEquipment,
@@ -370,10 +430,18 @@ export class NotificationsService {
       masterId: dto.masterId,
       data: {
         clientName: orderData.clientName || 'Не указано',
+        phone: orderData.phone || undefined,
+        address: orderData.address || undefined,
         rk: orderData.rk || undefined,
         avitoName: orderData.avitoName || undefined,
         typeEquipment: orderData.typeEquipment || undefined,
-        dateMeeting: orderData.dateMeeting ? new Date(orderData.dateMeeting).toLocaleString('ru-RU') : undefined,
+        dateMeeting: orderData.dateMeeting ? new Date(orderData.dateMeeting).toLocaleString('ru-RU', { 
+          day: '2-digit', 
+          month: '2-digit', 
+          year: 'numeric', 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        }) : undefined,
       },
     });
   }
@@ -419,13 +487,21 @@ export class NotificationsService {
       }
     }
 
+    const dateFormat = { 
+      day: '2-digit', 
+      month: '2-digit', 
+      year: 'numeric', 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    } as const;
+
     return this.sendNotification({
       type: 'order_closed',
       orderId: dto.orderId,
       masterId: dto.masterId,
       data: {
         clientName: orderData.clientName || 'Не указано',
-        closingDate: orderData.closingDate ? new Date(orderData.closingDate).toLocaleString('ru-RU') : new Date().toLocaleString('ru-RU'),
+        closingDate: orderData.closingDate ? new Date(orderData.closingDate).toLocaleString('ru-RU', dateFormat) : new Date().toLocaleString('ru-RU', dateFormat),
         total: orderData.total || undefined,
         expense: orderData.expense || undefined,
         net: orderData.net || undefined,
@@ -478,6 +554,20 @@ export class NotificationsService {
       }
     }
 
+    const dateTimeFormat = { 
+      day: '2-digit', 
+      month: '2-digit', 
+      year: 'numeric', 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    } as const;
+
+    const dateFormat = { 
+      day: '2-digit', 
+      month: '2-digit', 
+      year: 'numeric'
+    } as const;
+
     return this.sendNotification({
       type: 'order_in_modern',
       orderId: dto.orderId,
@@ -487,9 +577,9 @@ export class NotificationsService {
         rk: orderData.rk || undefined,
         avitoName: orderData.avitoName || undefined,
         typeEquipment: orderData.typeEquipment || undefined,
-        dateMeeting: orderData.dateMeeting ? new Date(orderData.dateMeeting).toLocaleString('ru-RU') : undefined,
+        dateMeeting: orderData.dateMeeting ? new Date(orderData.dateMeeting).toLocaleString('ru-RU', dateTimeFormat) : undefined,
         prepayment: orderData.prepayment || undefined,
-        expectedClosingDate: orderData.expectedClosingDate ? new Date(orderData.expectedClosingDate).toLocaleString('ru-RU') : undefined,
+        expectedClosingDate: orderData.expectedClosingDate ? new Date(orderData.expectedClosingDate).toLocaleDateString('ru-RU', dateFormat) : undefined,
         comment: orderData.comment || undefined,
       },
     });
@@ -541,7 +631,13 @@ export class NotificationsService {
         rk: orderData.rk || undefined,
         avitoName: orderData.avitoName || undefined,
         typeEquipment: orderData.typeEquipment || undefined,
-        dateMeeting: orderData.dateMeeting ? new Date(orderData.dateMeeting).toLocaleString('ru-RU') : undefined,
+        dateMeeting: orderData.dateMeeting ? new Date(orderData.dateMeeting).toLocaleString('ru-RU', { 
+          day: '2-digit', 
+          month: '2-digit', 
+          year: 'numeric', 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        }) : undefined,
         daysOverdue: orderData.daysOverdue,
       },
     });
@@ -587,6 +683,20 @@ export class NotificationsService {
       this.logger.error(`Failed to fetch order data for order #${dto.orderId}: ${error.message}`);
     }
 
+    const dateTimeFormat = { 
+      day: '2-digit', 
+      month: '2-digit', 
+      year: 'numeric', 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    } as const;
+
+    const dateFormat = { 
+      day: '2-digit', 
+      month: '2-digit', 
+      year: 'numeric'
+    } as const;
+
     return this.sendNotification({
       type: 'modern_closing_reminder',
       orderId: dto.orderId,
@@ -596,8 +706,8 @@ export class NotificationsService {
         rk: orderData.rk || undefined,
         avitoName: orderData.avitoName || undefined,
         typeEquipment: orderData.typeEquipment || undefined,
-        dateMeeting: orderData.dateMeeting ? new Date(orderData.dateMeeting).toLocaleString('ru-RU') : undefined,
-        expectedClosingDate: orderData.expectedClosingDate ? new Date(orderData.expectedClosingDate).toLocaleString('ru-RU') : undefined,
+        dateMeeting: orderData.dateMeeting ? new Date(orderData.dateMeeting).toLocaleString('ru-RU', dateTimeFormat) : undefined,
+        expectedClosingDate: orderData.expectedClosingDate ? new Date(orderData.expectedClosingDate).toLocaleDateString('ru-RU', dateFormat) : undefined,
         daysUntilClosing: orderData.daysUntilClosing,
       },
     });

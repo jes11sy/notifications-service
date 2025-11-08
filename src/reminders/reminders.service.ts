@@ -169,7 +169,11 @@ export class RemindersService {
             masterId: order.masterId!,
             clientName: order.clientName,
             expectedClosingDate: order.dateClosmod 
-              ? new Date(order.dateClosmod).toLocaleDateString('ru-RU')
+              ? new Date(order.dateClosmod).toLocaleDateString('ru-RU', { 
+                  day: '2-digit', 
+                  month: '2-digit', 
+                  year: 'numeric' 
+                })
               : 'Не указано',
             daysUntilClosing: isOverdue ? -daysUntilClosing : daysUntilClosing,
           });
