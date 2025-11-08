@@ -381,7 +381,7 @@ export class NotificationsService {
   }
 
   async sendOrderAcceptedNotification(dto: OrderAcceptedNotificationDto) {
-    // Если данные не переданы, запрашиваем из БД
+    // ВСЕГДА загружаем данные из БД, так как phone и address обычно не передаются в DTO
     let orderData = {
       clientName: dto.clientName,
       phone: undefined as string | undefined,
@@ -392,36 +392,33 @@ export class NotificationsService {
       dateMeeting: dto.dateMeeting,
     };
 
-    // Если хотя бы одно поле не указано - запрашиваем заказ из БД
-    if (!dto.clientName || !dto.rk || !dto.typeEquipment || !dto.dateMeeting) {
-      try {
-        const order = await this.prisma.order.findUnique({
-          where: { id: dto.orderId },
-          select: {
-            clientName: true,
-            phone: true,
-            address: true,
-            rk: true,
-            avitoName: true,
-            typeEquipment: true,
-            dateMeeting: true,
-          },
-        });
+    try {
+      const order = await this.prisma.order.findUnique({
+        where: { id: dto.orderId },
+        select: {
+          clientName: true,
+          phone: true,
+          address: true,
+          rk: true,
+          avitoName: true,
+          typeEquipment: true,
+          dateMeeting: true,
+        },
+      });
 
-        if (order) {
-          orderData = {
-            clientName: dto.clientName || order.clientName,
-            phone: order.phone,
-            address: order.address,
-            rk: dto.rk || order.rk,
-            avitoName: dto.avitoName || order.avitoName,
-            typeEquipment: dto.typeEquipment || order.typeEquipment,
-            dateMeeting: dto.dateMeeting || order.dateMeeting?.toISOString(),
-          };
-        }
-      } catch (error) {
-        this.logger.error(`Failed to fetch order data for order #${dto.orderId}: ${error.message}`);
+      if (order) {
+        orderData = {
+          clientName: dto.clientName || order.clientName,
+          phone: order.phone,
+          address: order.address,
+          rk: dto.rk || order.rk,
+          avitoName: dto.avitoName || order.avitoName,
+          typeEquipment: dto.typeEquipment || order.typeEquipment,
+          dateMeeting: dto.dateMeeting || order.dateMeeting?.toISOString(),
+        };
       }
+    } catch (error) {
+      this.logger.error(`Failed to fetch order data for order #${dto.orderId}: ${error.message}`);
     }
 
     return this.sendNotification({
