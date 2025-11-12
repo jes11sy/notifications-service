@@ -551,20 +551,6 @@ export class NotificationsService {
       }
     }
 
-    const dateTimeFormat = { 
-      day: '2-digit', 
-      month: '2-digit', 
-      year: 'numeric', 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    } as const;
-
-    const dateFormat = { 
-      day: '2-digit', 
-      month: '2-digit', 
-      year: 'numeric'
-    } as const;
-
     return this.sendNotification({
       type: 'order_in_modern',
       orderId: dto.orderId,
@@ -574,9 +560,9 @@ export class NotificationsService {
         rk: orderData.rk || undefined,
         avitoName: orderData.avitoName || undefined,
         typeEquipment: orderData.typeEquipment || undefined,
-        dateMeeting: orderData.dateMeeting ? new Date(orderData.dateMeeting).toLocaleString('ru-RU', dateTimeFormat) : undefined,
+        dateMeeting: orderData.dateMeeting || undefined,
         prepayment: orderData.prepayment || undefined,
-        expectedClosingDate: orderData.expectedClosingDate ? new Date(orderData.expectedClosingDate).toLocaleDateString('ru-RU', dateFormat) : undefined,
+        expectedClosingDate: orderData.expectedClosingDate || undefined,
         comment: orderData.comment || undefined,
       },
     });
@@ -628,13 +614,7 @@ export class NotificationsService {
         rk: orderData.rk || undefined,
         avitoName: orderData.avitoName || undefined,
         typeEquipment: orderData.typeEquipment || undefined,
-        dateMeeting: orderData.dateMeeting ? new Date(orderData.dateMeeting).toLocaleString('ru-RU', { 
-          day: '2-digit', 
-          month: '2-digit', 
-          year: 'numeric', 
-          hour: '2-digit', 
-          minute: '2-digit' 
-        }) : undefined,
+        dateMeeting: orderData.dateMeeting || undefined,
         daysOverdue: orderData.daysOverdue,
       },
     });
@@ -680,20 +660,6 @@ export class NotificationsService {
       this.logger.error(`Failed to fetch order data for order #${dto.orderId}: ${error.message}`);
     }
 
-    const dateTimeFormat = { 
-      day: '2-digit', 
-      month: '2-digit', 
-      year: 'numeric', 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    } as const;
-
-    const dateFormat = { 
-      day: '2-digit', 
-      month: '2-digit', 
-      year: 'numeric'
-    } as const;
-
     return this.sendNotification({
       type: 'modern_closing_reminder',
       orderId: dto.orderId,
@@ -703,8 +669,8 @@ export class NotificationsService {
         rk: orderData.rk || undefined,
         avitoName: orderData.avitoName || undefined,
         typeEquipment: orderData.typeEquipment || undefined,
-        dateMeeting: orderData.dateMeeting ? new Date(orderData.dateMeeting).toLocaleString('ru-RU', dateTimeFormat) : undefined,
-        expectedClosingDate: orderData.expectedClosingDate ? new Date(orderData.expectedClosingDate).toLocaleDateString('ru-RU', dateFormat) : undefined,
+        dateMeeting: orderData.dateMeeting || undefined,
+        expectedClosingDate: orderData.expectedClosingDate || undefined,
         daysUntilClosing: orderData.daysUntilClosing,
       },
     });
