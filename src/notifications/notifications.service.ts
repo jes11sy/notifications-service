@@ -18,7 +18,39 @@ import { MESSAGE_TEMPLATES, MessageType } from './message-templates';
 
 @Injectable()
 export class NotificationsService {
-  private readonly logger = new Logger(NotificationsService.name);
+  private readonly logger = new Logger(NotificationsService.name)
+
+  // Единая функция форматирования даты с проверкой валидности
+  private formatDate(dateString: string | undefined, format: Intl.DateTimeFormatOptions = {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  }): string {
+    if (!dateString) return 'Не указано';
+    
+    // Если дата уже отформатирована (содержит запятую и двоеточие), возвращаем как есть
+    if (typeof dateString === 'string' && /^\d{2}\.\d{2}\.\d{4}, \d{2}:\d{2}$/.test(dateString)) {
+      return dateString;
+    }
+    
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      this.logger.warn(`Invalid date format: ${dateString}`);
+      return 'Не указано';
+    }
+    return date.toLocaleString('ru-RU', format);
+  }
+
+  // Форматирование даты без времени
+  private formatDateOnly(dateString: string | undefined): string {
+    return this.formatDate(dateString, {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  };
 
   constructor(
     private prisma: PrismaService,
@@ -163,13 +195,7 @@ export class NotificationsService {
         clientName: dto.clientName,
         phone: dto.phone,
         address: dto.address,
-        dateMeeting: new Date(dto.dateMeeting).toLocaleString('ru-RU', { 
-          day: '2-digit', 
-          month: '2-digit', 
-          year: 'numeric', 
-          hour: '2-digit', 
-          minute: '2-digit' 
-        }),
+        dateMeeting: this.formatDate(dto.dateMeeting),
         problem: dto.problem,
         rk: dto.rk || 'Не указано',
         avitoName: dto.avitoName || 'Не указано',
@@ -217,16 +243,6 @@ export class NotificationsService {
       this.logger.error(`Failed to fetch order data for order #${dto.orderId}: ${error.message}`);
     }
 
-    // Форматируем дату с проверкой валидности
-    const formatDate = (dateString: string): string => {
-      if (!dateString) return 'Не указано';
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) {
-        this.logger.warn(`Invalid date format: ${dateString}`);
-        return dateString; // Возвращаем исходную строку, если не удалось распарсить
-      }
-      return date.toLocaleString('ru-RU', dateFormat);
-    };
 
     // Отправляем уведомление директору
     const directorResult = await this.sendNotification({
@@ -238,8 +254,8 @@ export class NotificationsService {
         rk: orderData.rk,
         avitoName: orderData.avitoName,
         typeEquipment: orderData.typeEquipment,
-        newDate: formatDate(dto.newDate),
-        oldDate: dto.oldDate ? formatDate(dto.oldDate) : 'Не указано',
+        newDate: this.formatDate(dto.newDate),
+        oldDate: dto.oldDate ? this.formatDate(dto.oldDate) : 'Не указано',
       },
     });
     results.push({ recipient: 'director', ...directorResult });
@@ -255,8 +271,8 @@ export class NotificationsService {
           rk: orderData.rk,
           avitoName: orderData.avitoName,
           typeEquipment: orderData.typeEquipment,
-          newDate: formatDate(dto.newDate),
-          oldDate: dto.oldDate ? formatDate(dto.oldDate) : 'Не указано',
+          newDate: this.formatDate(dto.newDate),
+          oldDate: dto.oldDate ? this.formatDate(dto.oldDate) : 'Не указано',
         },
       });
       results.push({ recipient: 'master', ...masterResult });
@@ -371,13 +387,7 @@ export class NotificationsService {
         typeEquipment: dto.typeEquipment || 'БТ',
         clientName: dto.clientName || 'Не указано',
         address: dto.address || 'Не указано',
-        dateMeeting: dto.dateMeeting ? new Date(dto.dateMeeting).toLocaleString('ru-RU', { 
-          day: '2-digit', 
-          month: '2-digit', 
-          year: 'numeric', 
-          hour: '2-digit', 
-          minute: '2-digit' 
-        }) : 'Не указано',
+        dateMeeting: this.formatDate(dto.dateMeeting),
       },
     });
   }
@@ -443,13 +453,7 @@ export class NotificationsService {
         rk: orderData.rk || undefined,
         avitoName: orderData.avitoName || undefined,
         typeEquipment: orderData.typeEquipment || undefined,
-        dateMeeting: orderData.dateMeeting ? new Date(orderData.dateMeeting).toLocaleString('ru-RU', { 
-          day: '2-digit', 
-          month: '2-digit', 
-          year: 'numeric', 
-          hour: '2-digit', 
-          minute: '2-digit' 
-        }) : undefined,
+        dateMeeting: orderData.dateMeeting ? this.formatDate(orderData.dateMeeting) : undefined,
       },
     });
   }
@@ -509,7 +513,7 @@ export class NotificationsService {
       masterId: dto.masterId,
       data: {
         clientName: orderData.clientName || 'Не указано',
-        closingDate: orderData.closingDate ? new Date(orderData.closingDate).toLocaleString('ru-RU', dateFormat) : new Date().toLocaleString('ru-RU', dateFormat),
+        closingDate: orderData.closingDate ? this.formatDate(orderData.closingDate) : this.formatDate(new Date().toISOString()),
         total: orderData.total || undefined,
         expense: orderData.expense || undefined,
         net: orderData.net || undefined,

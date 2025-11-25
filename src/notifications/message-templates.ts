@@ -43,13 +43,25 @@ export const MESSAGE_TEMPLATES = {
         ? `❌ Заказ №${data.orderId} Мастер отказался`
         : `❌ Заказ №${data.orderId} Отменен`;
       
-      const dateMeeting = data.dateMeeting ? new Date(data.dateMeeting).toLocaleString('ru-RU', { 
-        day: '2-digit', 
-        month: '2-digit', 
-        year: 'numeric', 
-        hour: '2-digit', 
-        minute: '2-digit' 
-      }) : 'Не указано';
+      // Форматируем дату только если она не отформатирована
+      const formatDateIfNeeded = (dateStr: string | undefined): string => {
+        if (!dateStr) return 'Не указано';
+        // Если уже отформатирована (содержит запятую и двоеточие), используем как есть
+        if (/^\d{2}\.\d{2}\.\d{4}, \d{2}:\d{2}$/.test(dateStr)) {
+          return dateStr;
+        }
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) return 'Не указано';
+        return date.toLocaleString('ru-RU', { 
+          day: '2-digit', 
+          month: '2-digit', 
+          year: 'numeric', 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        });
+      };
+      
+      const dateMeeting = formatDateIfNeeded(data.dateMeeting);
 
       return `${title}
 
@@ -66,13 +78,8 @@ export const MESSAGE_TEMPLATES = {
   master_assigned: {
     recipientType: 'master',
     format: (data: any) => {
-      const dateMeeting = data.dateMeeting ? new Date(data.dateMeeting).toLocaleString('ru-RU', { 
-        day: '2-digit', 
-        month: '2-digit', 
-        year: 'numeric', 
-        hour: '2-digit', 
-        minute: '2-digit' 
-      }) : 'Не указано';
+      // dateMeeting уже отформатирован в сервисе, используем как есть
+      const dateMeeting = data.dateMeeting || 'Не указано';
 
       return `👷 Вам назначен заказ №${data.orderId}
 
@@ -95,13 +102,8 @@ export const MESSAGE_TEMPLATES = {
   order_accepted: {
     recipientType: 'master',
     format: (data: any) => {
-      const dateMeeting = data.dateMeeting ? new Date(data.dateMeeting).toLocaleString('ru-RU', { 
-        day: '2-digit', 
-        month: '2-digit', 
-        year: 'numeric', 
-        hour: '2-digit', 
-        minute: '2-digit' 
-      }) : 'Не указано';
+      // dateMeeting уже отформатирован в сервисе, используем как есть
+      const dateMeeting = data.dateMeeting || 'Не указано';
 
       return `✅ Заказ №${data.orderId} принят
 
@@ -132,19 +134,25 @@ export const MESSAGE_TEMPLATES = {
   order_in_modern: {
     recipientType: 'master',
     format: (data: any) => {
-      const dateMeeting = data.dateMeeting ? new Date(data.dateMeeting).toLocaleString('ru-RU', { 
-        day: '2-digit', 
-        month: '2-digit', 
-        year: 'numeric', 
-        hour: '2-digit', 
-        minute: '2-digit' 
-      }) : 'Не указано';
+      // Форматируем дату только если она не отформатирована
+      const formatDateIfNeeded = (dateStr: string | undefined, withTime: boolean = true): string => {
+        if (!dateStr) return 'Не указано';
+        // Если уже отформатирована, используем как есть
+        if (withTime && /^\d{2}\.\d{2}\.\d{4}, \d{2}:\d{2}$/.test(dateStr)) {
+          return dateStr;
+        }
+        if (!withTime && /^\d{2}\.\d{2}\.\d{4}$/.test(dateStr)) {
+          return dateStr;
+        }
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) return 'Не указано';
+        return withTime 
+          ? date.toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+          : date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      };
       
-      const expectedClosingDate = data.expectedClosingDate ? new Date(data.expectedClosingDate).toLocaleDateString('ru-RU', { 
-        day: '2-digit', 
-        month: '2-digit', 
-        year: 'numeric'
-      }) : 'Не указано';
+      const dateMeeting = formatDateIfNeeded(data.dateMeeting, true);
+      const expectedClosingDate = formatDateIfNeeded(data.expectedClosingDate, false);
 
       return `🕐 Заказ №${data.orderId} в модерне
 
@@ -163,13 +171,24 @@ export const MESSAGE_TEMPLATES = {
   close_order_reminder: {
     recipientType: 'master',
     format: (data: any) => {
-      const dateMeeting = data.dateMeeting ? new Date(data.dateMeeting).toLocaleString('ru-RU', { 
-        day: '2-digit', 
-        month: '2-digit', 
-        year: 'numeric', 
-        hour: '2-digit', 
-        minute: '2-digit' 
-      }) : 'Не указано';
+      // Форматируем дату только если она не отформатирована
+      const formatDateIfNeeded = (dateStr: string | undefined): string => {
+        if (!dateStr) return 'Не указано';
+        if (/^\d{2}\.\d{2}\.\d{4}, \d{2}:\d{2}$/.test(dateStr)) {
+          return dateStr;
+        }
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) return 'Не указано';
+        return date.toLocaleString('ru-RU', { 
+          day: '2-digit', 
+          month: '2-digit', 
+          year: 'numeric', 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        });
+      };
+      
+      const dateMeeting = formatDateIfNeeded(data.dateMeeting);
 
       return `⚠️ Закройте заказ №${data.orderId}
 
@@ -186,19 +205,24 @@ export const MESSAGE_TEMPLATES = {
   modern_closing_reminder: {
     recipientType: 'master',
     format: (data: any) => {
-      const dateMeeting = data.dateMeeting ? new Date(data.dateMeeting).toLocaleString('ru-RU', { 
-        day: '2-digit', 
-        month: '2-digit', 
-        year: 'numeric', 
-        hour: '2-digit', 
-        minute: '2-digit' 
-      }) : 'Не указано';
+      // Форматируем дату только если она не отформатирована
+      const formatDateIfNeeded = (dateStr: string | undefined, withTime: boolean = true): string => {
+        if (!dateStr) return 'Не указано';
+        if (withTime && /^\d{2}\.\d{2}\.\d{4}, \d{2}:\d{2}$/.test(dateStr)) {
+          return dateStr;
+        }
+        if (!withTime && /^\d{2}\.\d{2}\.\d{4}$/.test(dateStr)) {
+          return dateStr;
+        }
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) return 'Не указано';
+        return withTime 
+          ? date.toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+          : date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      };
       
-      const expectedClosingDate = data.expectedClosingDate ? new Date(data.expectedClosingDate).toLocaleDateString('ru-RU', { 
-        day: '2-digit', 
-        month: '2-digit', 
-        year: 'numeric'
-      }) : 'Не указано';
+      const dateMeeting = formatDateIfNeeded(data.dateMeeting, true);
+      const expectedClosingDate = formatDateIfNeeded(data.expectedClosingDate, false);
 
       const daysInfo = data.daysUntilClosing < 0 
         ? `⚠️ Просрочено на ${Math.abs(data.daysUntilClosing)} дн.`
