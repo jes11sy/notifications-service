@@ -217,6 +217,17 @@ export class NotificationsService {
       this.logger.error(`Failed to fetch order data for order #${dto.orderId}: ${error.message}`);
     }
 
+    // Форматируем дату с проверкой валидности
+    const formatDate = (dateString: string): string => {
+      if (!dateString) return 'Не указано';
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        this.logger.warn(`Invalid date format: ${dateString}`);
+        return dateString; // Возвращаем исходную строку, если не удалось распарсить
+      }
+      return date.toLocaleString('ru-RU', dateFormat);
+    };
+
     // Отправляем уведомление директору
     const directorResult = await this.sendNotification({
       type: 'date_change',
@@ -227,8 +238,8 @@ export class NotificationsService {
         rk: orderData.rk,
         avitoName: orderData.avitoName,
         typeEquipment: orderData.typeEquipment,
-        newDate: new Date(dto.newDate).toLocaleString('ru-RU', dateFormat),
-        oldDate: dto.oldDate ? new Date(dto.oldDate).toLocaleString('ru-RU', dateFormat) : 'Не указано',
+        newDate: formatDate(dto.newDate),
+        oldDate: dto.oldDate ? formatDate(dto.oldDate) : 'Не указано',
       },
     });
     results.push({ recipient: 'director', ...directorResult });
@@ -244,8 +255,8 @@ export class NotificationsService {
           rk: orderData.rk,
           avitoName: orderData.avitoName,
           typeEquipment: orderData.typeEquipment,
-          newDate: new Date(dto.newDate).toLocaleString('ru-RU', dateFormat),
-          oldDate: dto.oldDate ? new Date(dto.oldDate).toLocaleString('ru-RU', dateFormat) : 'Не указано',
+          newDate: formatDate(dto.newDate),
+          oldDate: dto.oldDate ? formatDate(dto.oldDate) : 'Не указано',
         },
       });
       results.push({ recipient: 'master', ...masterResult });

@@ -21,13 +21,8 @@ export const MESSAGE_TEMPLATES = {
   date_change: {
     recipientType: 'both', // и директор и мастер
     format: (data: any) => {
-      const newDate = data.newDate ? new Date(data.newDate).toLocaleString('ru-RU', { 
-        day: '2-digit', 
-        month: '2-digit', 
-        year: 'numeric', 
-        hour: '2-digit', 
-        minute: '2-digit' 
-      }) : 'Не указано';
+      // newDate уже отформатирован в сервисе, используем как есть
+      const newDate = data.newDate || 'Не указано';
 
       return `📅 Заказ №${data.orderId} перенесен на ${newDate}
 
