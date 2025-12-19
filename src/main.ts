@@ -12,9 +12,23 @@ async function bootstrap() {
 
   const logger = new Logger('NotificationsService');
 
+  // 🍪 РЕГИСТРАЦИЯ COOKIE PLUGIN (до CORS!)
+  await app.register(require('@fastify/cookie'), {
+    secret: process.env.COOKIE_SECRET || process.env.JWT_SECRET,
+  });
+  logger.log('✅ Cookie plugin registered');
+
   await app.register(require('@fastify/cors'), {
     origin: process.env.CORS_ORIGIN?.split(',') || true,
     credentials: true,
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'Accept',
+      'Origin',
+      'X-Use-Cookies', // 🍪 Поддержка cookie mode
+    ],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   });
 
   await app.register(require('@fastify/helmet'), {
