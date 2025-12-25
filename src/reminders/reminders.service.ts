@@ -8,8 +8,6 @@ export class RemindersService {
   private readonly logger = new Logger(RemindersService.name);
   
   // Настройки из .env
-  private readonly FIRST_REMINDER_HOURS = parseInt(process.env.FIRST_REMINDER_HOURS || '3', 10); // Первое напоминание через 3 часа
-  private readonly REMINDER_INTERVAL_HOURS = parseInt(process.env.REMINDER_INTERVAL_HOURS || '3', 10); // Потом каждые 3 часа
   private readonly MODERN_REMINDER_DAYS = parseInt(process.env.MODERN_REMINDER_DAYS || '3', 10);
 
   constructor(
@@ -18,69 +16,13 @@ export class RemindersService {
   ) {}
 
   /**
-   * Каждый час проверяем заказы, которые нужно закрыть
-   * Статусы: "Принял", "В пути", "В работе"
-   * 
-   * Логика напоминаний:
-   * - Первое напоминание через 3 часа после dateMeeting (13:00 если встреча в 10:00)
-   * - Потом каждые 3 часа: 16:00, 19:00, 22:00, и т.д.
-   * - Пока мастер не закроет заказ
+   * ❌ ОТКЛЮЧЕНО: Напоминание о незакрытых заказах
+   * Убрано по запросу - теперь только напоминания о модерне
    */
-  @Cron(CronExpression.EVERY_HOUR)
-  async checkOrdersToClose() {
-    this.logger.log('🔍 Checking orders that need to be closed...');
-
-    try {
-      const now = new Date();
-      const firstReminderThreshold = new Date(now.getTime() - this.FIRST_REMINDER_HOURS * 60 * 60 * 1000);
-
-      // Находим заказы с нужными статусами и прошедшей датой встречи
-      const orders = await this.prisma.order.findMany({
-        where: {
-          statusOrder: {
-            in: ['Принял', 'В пути', 'В работе'],
-          },
-          dateMeeting: {
-            lte: firstReminderThreshold, // Дата встречи была 3+ часов назад
-          },
-          masterId: {
-            not: null,
-          },
-        },
-        include: {
-          master: true,
-        },
-      });
-
-      this.logger.log(`Found ${orders.length} orders to check for close reminders`);
-
-      for (const order of orders) {
-        if (!order.master || !order.master.chatId) {
-          continue;
-        }
-
-        // Считаем сколько часов прошло с даты встречи
-        const hoursSinceMeeting = Math.floor(
-          (now.getTime() - order.dateMeeting.getTime()) / (1000 * 60 * 60)
-        );
-
-        // Отправляем напоминание если прошло 3+ часа (крон работает каждый час)
-        if (hoursSinceMeeting >= this.FIRST_REMINDER_HOURS) {
-          // Отправляем напоминание
-          await this.notificationsService.sendCloseOrderReminderNotification({
-            orderId: order.id,
-            masterId: order.masterId!,
-            clientName: order.clientName,
-            daysOverdue: Math.floor(hoursSinceMeeting / 24),
-          });
-
-          this.logger.log(`✅ Sent close reminder for order ${order.id} to master ${order.master.name} (${hoursSinceMeeting}h overdue)`);
-        }
-      }
-    } catch (error) {
-      this.logger.error(`Error checking orders to close: ${error.message}`);
-    }
-  }
+  // @Cron(CronExpression.EVERY_HOUR)
+  // async checkOrdersToClose() {
+  //   ...
+  // }
 
   /**
    * Раз в день в 10:00 проверяем заказы в модерне
@@ -188,9 +130,8 @@ export class RemindersService {
    */
   async testReminders() {
     this.logger.log('🧪 Testing reminder jobs manually...');
-    await this.checkOrdersToClose();
     await this.checkModernOrders();
-    return { success: true, message: 'Reminder jobs executed' };
+    return { success: true, message: 'Modern reminder job executed' };
   }
 }
 
