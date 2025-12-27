@@ -3,6 +3,8 @@ import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { AppModule } from './app.module';
+import { GlobalExceptionFilter } from './filters/global-exception.filter';
+import { PrismaService } from './prisma/prisma.service';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -41,6 +43,10 @@ async function bootstrap() {
       transform: true,
     }),
   );
+  
+  // 🔥 Error logging filter (5xx errors → error_logs table)
+  const prismaService = app.get(PrismaService);
+  app.useGlobalFilters(new GlobalExceptionFilter(prismaService));
 
   const config = new DocumentBuilder()
     .setTitle('Notifications Service API')
