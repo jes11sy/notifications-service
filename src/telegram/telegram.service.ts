@@ -1,11 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 
 @Injectable()
 export class TelegramService {
   private readonly logger = new Logger(TelegramService.name);
   private readonly botToken: string;
   private readonly apiUrl: string;
+  private readonly maxRetries: number = 3;
+  private readonly retryDelay: number = 1000; // Начальная задержка в мс
 
   constructor() {
     this.botToken = process.env.TELEGRAM_BOT_TOKEN || '';
@@ -18,48 +20,115 @@ export class TelegramService {
     }
   }
 
+  /**
+   * Задержка между повторными попытками (экспоненциальная)
+   */
+  private async sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  /**
+   * Проверка, является ли ошибка временной и можно ли повторять запрос
+   */
+  private isRetryableError(error: any): boolean {
+    if (!error || !error.code) return false;
+    
+    // DNS ошибки (getaddrinfo EAI_AGAIN, ENOTFOUND)
+    if (error.code === 'EAI_AGAIN' || error.code === 'ENOTFOUND' || error.code === 'ETIMEDOUT') {
+      return true;
+    }
+    
+    // Сетевые ошибки
+    if (error.code === 'ECONNRESET' || error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT') {
+      return true;
+    }
+    
+    // HTTP статусы для повторения
+    if (error.response) {
+      const status = error.response.status;
+      return status === 429 || status === 500 || status === 502 || status === 503 || status === 504;
+    }
+    
+    return false;
+  }
+
   async sendMessage(chatId: string, text: string, buttons?: Array<{text: string, url: string}>): Promise<boolean> {
     if (!this.botToken) {
       this.logger.error('Telegram bot token not configured');
       return false;
     }
 
-    try {
-      const url = `${this.apiUrl}/bot${this.botToken}/sendMessage`;
-      
-      const payload: any = {
-        chat_id: chatId,
-        text: text,
-        parse_mode: 'HTML',
+    const url = `${this.apiUrl}/bot${this.botToken}/sendMessage`;
+    
+    const payload: any = {
+      chat_id: chatId,
+      text: text,
+      parse_mode: 'HTML',
+    };
+
+    // Добавляем inline кнопки если есть
+    if (buttons && buttons.length > 0) {
+      payload.reply_markup = {
+        inline_keyboard: [
+          buttons.map(btn => ({
+            text: btn.text,
+            url: btn.url,
+          }))
+        ]
       };
-
-      // Добавляем inline кнопки если есть
-      if (buttons && buttons.length > 0) {
-        payload.reply_markup = {
-          inline_keyboard: [
-            buttons.map(btn => ({
-              text: btn.text,
-              url: btn.url,
-            }))
-          ]
-        };
-      }
-
-      const response = await axios.post(url, payload, {
-        timeout: 10000,
-      });
-
-      if (response.data.ok) {
-        this.logger.log(`✅ Message sent to chat ${chatId}`);
-        return true;
-      } else {
-        this.logger.error(`❌ Failed to send message: ${response.data.description}`);
-        return false;
-      }
-    } catch (error) {
-      this.logger.error(`❌ Error sending Telegram message: ${error.message}`);
-      return false;
     }
+
+    // Повторные попытки с экспоненциальной задержкой
+    for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
+      try {
+        const response = await axios.post(url, payload, {
+          timeout: 15000, // Увеличиваем timeout до 15 секунд
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (response.data.ok) {
+          if (attempt > 1) {
+            this.logger.log(`✅ Message sent to chat ${chatId} after ${attempt} attempts`);
+          } else {
+            this.logger.log(`✅ Message sent to chat ${chatId}`);
+          }
+          return true;
+        } else {
+          this.logger.error(`❌ Failed to send message: ${response.data.description}`);
+          return false;
+        }
+      } catch (error) {
+        const axiosError = error as AxiosError;
+        const isLastAttempt = attempt === this.maxRetries;
+        
+        // Если это последняя попытка, логируем ошибку и возвращаем false
+        if (isLastAttempt) {
+          if (axiosError.code) {
+            this.logger.error(`❌ Error sending Telegram message after ${this.maxRetries} attempts: ${axiosError.code} - ${axiosError.message}`);
+          } else if (axiosError.response) {
+            this.logger.error(`❌ Error sending Telegram message: HTTP ${axiosError.response.status} - ${axiosError.response.statusText}`);
+          } else {
+            this.logger.error(`❌ Error sending Telegram message: ${axiosError.message}`);
+          }
+          return false;
+        }
+        
+        // Проверяем, можно ли повторять запрос
+        if (this.isRetryableError(axiosError)) {
+          const delay = this.retryDelay * Math.pow(2, attempt - 1); // Экспоненциальная задержка
+          this.logger.warn(`⚠️ Telegram API error (attempt ${attempt}/${this.maxRetries}): ${axiosError.code || axiosError.message}. Retrying in ${delay}ms...`);
+          await this.sleep(delay);
+        } else {
+          // Если ошибка не повторяемая, сразу возвращаем false
+          this.logger.error(`❌ Non-retryable error sending Telegram message: ${axiosError.code || axiosError.message}`);
+          return false;
+        }
+      }
+    }
+
+    return false;
   }
 
   async getMe(): Promise<any> {
