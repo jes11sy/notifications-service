@@ -115,6 +115,11 @@ export class DateChangeNotificationDto {
   @IsNumber()
   @IsOptional()
   masterId?: number;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  address?: string;
 }
 
 export class OrderRejectionNotificationDto {

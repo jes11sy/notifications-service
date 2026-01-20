@@ -31,6 +31,7 @@ export const MESSAGE_TEMPLATES = {
 Направление: ${data.typeEquipment && data.typeEquipment.trim() ? data.typeEquipment : 'БТ'}
 
 👤 Клиент: ${data.clientName}
+📍 Адрес: ${data.address && data.address.trim() ? data.address : 'Не указано'}
 🗓 Дата встречи: ${newDate}${data.city ? `\n🏙 Город: ${data.city}` : ''}`;
     },
   },

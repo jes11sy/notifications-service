@@ -220,6 +220,7 @@ export class NotificationsService {
       rk: undefined as string | undefined,
       avitoName: undefined as string | undefined,
       typeEquipment: undefined as string | undefined,
+      address: undefined as string | undefined,
     };
 
     try {
@@ -229,6 +230,7 @@ export class NotificationsService {
           rk: true,
           avitoName: true,
           typeEquipment: true,
+          address: true,
         },
       });
 
@@ -237,6 +239,7 @@ export class NotificationsService {
           rk: order.rk,
           avitoName: order.avitoName,
           typeEquipment: order.typeEquipment,
+          address: order.address,
         };
       }
     } catch (error) {
@@ -254,6 +257,7 @@ export class NotificationsService {
         rk: orderData.rk,
         avitoName: orderData.avitoName,
         typeEquipment: orderData.typeEquipment,
+        address: dto.address || orderData.address,
         newDate: this.formatDate(dto.newDate),
         oldDate: dto.oldDate ? this.formatDate(dto.oldDate) : 'Не указано',
       },
@@ -271,6 +275,7 @@ export class NotificationsService {
           rk: orderData.rk,
           avitoName: orderData.avitoName,
           typeEquipment: orderData.typeEquipment,
+          address: dto.address || orderData.address,
           newDate: this.formatDate(dto.newDate),
           oldDate: dto.oldDate ? this.formatDate(dto.oldDate) : 'Не указано',
         },
