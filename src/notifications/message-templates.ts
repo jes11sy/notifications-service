@@ -40,9 +40,16 @@ export const MESSAGE_TEMPLATES = {
     recipientType: 'both', // и директор и мастер
     format: (data: any) => {
       // Определяем заголовок в зависимости от причины
-      const title = data.reason === 'Мастер отказался от заказа' 
-        ? `❌ Заказ №${data.orderId} Мастер отказался`
-        : `❌ Заказ №${data.orderId} Отменен`;
+      let title: string;
+      if (data.reason === 'Мастер отказался от заказа') {
+        title = `❌ Заказ №${data.orderId} Мастер отказался`;
+      } else if (data.reason === 'Отказ') {
+        title = `❌ Заказ №${data.orderId} Отказ`;
+      } else if (data.reason === 'Незаказ') {
+        title = `❌ Заказ №${data.orderId} Незаказ`;
+      } else {
+        title = `❌ Заказ №${data.orderId} Отменен`;
+      }
       
       // Форматируем дату только если она не отформатирована
       const formatDateIfNeeded = (dateStr: string | undefined): string => {
