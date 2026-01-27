@@ -22,6 +22,8 @@ model Director {
   createdAt     DateTime      @default(now()) @map("created_at")
   updatedAt     DateTime      @updatedAt @map("updated_at")
   
+  // ✅ FIX #163: Индекс для поиска директора по Telegram ID
+  @@index([tgId])
   @@map("director")
 }
 
@@ -44,6 +46,10 @@ model Master {
   
   orders        Order[]
   
+  // ✅ FIX #163: Индексы для быстрого поиска мастеров
+  @@index([tgId])                               // Поиск по Telegram ID
+  @@index([chatId])                             // Поиск по Chat ID
+  @@index([statusWork])                         // Фильтрация по статусу работы
   @@map("master")
 }
 
@@ -74,8 +80,17 @@ model Order {
   createdAt             DateTime  @default(now()) @map("created_at")
   updatedAt             DateTime  @updatedAt @map("updated_at")
   
-  master                Master?   @relation(fields: [masterId], references: [id])
+  // ✅ FIX #146: SetNull - заказ остаётся, мастер открепляется
+  master                Master?   @relation(fields: [masterId], references: [id], onDelete: SetNull)
   
+  // ✅ FIX #163: Индексы для быстрых запросов в notifications-service
+  @@index([masterId])                           // Уведомления мастеру
+  @@index([city])                               // Уведомления директору по городу
+  @@index([statusOrder])                        // Фильтрация по статусу
+  @@index([dateMeeting])                        // Напоминания о встречах
+  @@index([createDate(sort: Desc)])             // Сортировка по дате создания
+  @@index([city, statusOrder])                  // Комбинированный для директоров
+  @@index([masterId, statusOrder])              // Комбинированный для мастеров
   @@map("orders")
 }
 
