@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import axios, { AxiosError } from 'axios';
+import { SiteOrdersParserService, ParsedSiteOrder } from './site-orders-parser.service';
 
 @Injectable()
 export class TelegramService {
@@ -8,15 +9,27 @@ export class TelegramService {
   private readonly apiUrl: string;
   private readonly maxRetries: number = 3;
   private readonly retryDelay: number = 1000; // Начальная задержка в мс
+  private readonly siteOrdersChatId: string;
+  private readonly ordersServiceUrl: string;
+  private readonly parser: SiteOrdersParserService;
 
   constructor() {
     this.botToken = process.env.TELEGRAM_BOT_TOKEN || '';
     this.apiUrl = process.env.TELEGRAM_API_URL || 'https://api.telegram.org';
+    this.siteOrdersChatId = process.env.SITE_ORDERS_CHAT_ID || '';
+    this.ordersServiceUrl = process.env.ORDERS_SERVICE_URL || 'http://orders-service:5003';
+    this.parser = new SiteOrdersParserService();
     
     if (!this.botToken) {
       this.logger.warn('⚠️ TELEGRAM_BOT_TOKEN not configured');
     } else {
       this.logger.log('✅ Telegram Bot configured');
+    }
+
+    if (!this.siteOrdersChatId) {
+      this.logger.warn('⚠️ SITE_ORDERS_CHAT_ID not configured - site orders parsing disabled');
+    } else {
+      this.logger.log(`✅ Site orders chat configured: ${this.siteOrdersChatId}`);
     }
   }
 
@@ -159,12 +172,104 @@ export class TelegramService {
    */
   async handleUpdate(update: any): Promise<void> {
     try {
-      // Обработка команд
-      if (update.message?.text?.startsWith('/')) {
-        await this.handleCommand(update.message);
+      const message = update.message;
+      if (!message?.text) return;
+
+      const chatId = String(message.chat.id);
+
+      // Обработка команд (из любого чата)
+      if (message.text.startsWith('/')) {
+        await this.handleCommand(message);
+        return;
+      }
+
+      // Проверяем, это сообщение из чата заявок с сайтов
+      if (this.siteOrdersChatId && chatId === this.siteOrdersChatId) {
+        // Проверяем, это заявка с сайта
+        if (this.parser.isSiteOrderMessage(message.text)) {
+          await this.handleSiteOrder(message);
+        }
       }
     } catch (error) {
       this.logger.error(`Error handling update: ${error.message}`);
+    }
+  }
+
+  /**
+   * Обработка заявки с сайта
+   */
+  private async handleSiteOrder(message: any): Promise<void> {
+    const parsed = this.parser.parse(message.text);
+
+    if (!parsed) {
+      this.logger.warn('Failed to parse site order message');
+      return;
+    }
+
+    try {
+      // Проверяем, нет ли уже такой заявки (дедупликация по телефону за последние 5 минут)
+      const isDuplicate = await this.checkDuplicate(parsed.phone);
+      if (isDuplicate) {
+        this.logger.log(`⏭️ Duplicate site order skipped: ${parsed.phone}`);
+        return;
+      }
+
+      // Отправляем в orders-service
+      const response = await axios.post(
+        `${this.ordersServiceUrl}/api/v1/site-orders`,
+        parsed,
+        {
+          timeout: 10000,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      this.logger.log(`✅ Site order created: ID ${response.data.id} - ${parsed.site} - ${parsed.clientName}`);
+      
+      // Можно отправить подтверждение в чат (опционально)
+      // await this.sendMessage(String(message.chat.id), `✅ Заявка #${response.data.id} сохранена`);
+    } catch (error) {
+      const axiosError = error as AxiosError;
+      if (axiosError.response) {
+        this.logger.error(`❌ Failed to create site order: HTTP ${axiosError.response.status} - ${JSON.stringify(axiosError.response.data)}`);
+      } else {
+        this.logger.error(`❌ Failed to create site order: ${axiosError.message}`);
+      }
+    }
+  }
+
+  /**
+   * Проверка на дубликат (один телефон за последние 5 минут)
+   */
+  private async checkDuplicate(phone: string): Promise<boolean> {
+    try {
+      const response = await axios.get(
+        `${this.ordersServiceUrl}/api/v1/site-orders`,
+        {
+          params: {
+            search: phone,
+            limit: 1,
+          },
+          timeout: 5000,
+        }
+      );
+
+      if (response.data?.data?.length > 0) {
+        const lastOrder = response.data.data[0];
+        const createdAt = new Date(lastOrder.createdAt);
+        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+        
+        // Если заявка создана менее 5 минут назад — это дубликат
+        return createdAt > fiveMinutesAgo;
+      }
+
+      return false;
+    } catch (error) {
+      // В случае ошибки — не блокируем создание
+      this.logger.warn(`Failed to check duplicate: ${error.message}`);
+      return false;
     }
   }
 
