@@ -11,6 +11,7 @@ export class TelegramService {
   private readonly retryDelay: number = 1000; // Начальная задержка в мс
   private readonly siteOrdersChatId: string;
   private readonly ordersServiceUrl: string;
+  private readonly webhookToken: string;
   private readonly parser: SiteOrdersParserService;
 
   constructor() {
@@ -18,6 +19,7 @@ export class TelegramService {
     this.apiUrl = process.env.TELEGRAM_API_URL || 'https://api.telegram.org';
     this.siteOrdersChatId = process.env.SITE_ORDERS_CHAT_ID || '';
     this.ordersServiceUrl = process.env.ORDERS_SERVICE_URL || 'http://orders-service:5003';
+    this.webhookToken = process.env.WEBHOOK_TOKEN || process.env.NOTIFICATIONS_WEBHOOK_TOKEN || '';
     this.parser = new SiteOrdersParserService();
     
     if (!this.botToken) {
@@ -214,14 +216,15 @@ export class TelegramService {
         return;
       }
 
-      // Отправляем в orders-service
+      // Отправляем в orders-service (внутренний эндпоинт с токеном)
       const response = await axios.post(
-        `${this.ordersServiceUrl}/api/v1/site-orders`,
+        `${this.ordersServiceUrl}/api/v1/site-orders/internal`,
         parsed,
         {
           timeout: 10000,
           headers: {
             'Content-Type': 'application/json',
+            'x-webhook-token': this.webhookToken,
           },
         }
       );
