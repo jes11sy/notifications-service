@@ -14,6 +14,8 @@ import {
   OrderInModernNotificationDto,
   CloseOrderReminderNotificationDto,
   ModernClosingReminderNotificationDto,
+  CityChangeNotificationDto,
+  AddressChangeNotificationDto,
 } from './dto/notification.dto';
 import { RolesGuard, Roles, UserRole } from '../auth/roles.guard';
 
@@ -224,6 +226,40 @@ export class NotificationsController {
     }
 
     return this.notificationsService.sendModernClosingReminderNotification(dto);
+  }
+
+  @Post('city-change')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Send city change notification (webhook)' })
+  async cityChange(@Body() dto: CityChangeNotificationDto, @Headers('x-webhook-token') token: string) {
+    this.logger.log(`City change notification: ${JSON.stringify(dto)}`);
+    
+    const webhookToken = process.env.WEBHOOK_TOKEN || 'your-webhook-secret';
+    if (token !== webhookToken) {
+      return {
+        success: false,
+        message: 'Invalid webhook token',
+      };
+    }
+
+    return this.notificationsService.sendCityChangeNotification(dto);
+  }
+
+  @Post('address-change')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Send address change notification (webhook)' })
+  async addressChange(@Body() dto: AddressChangeNotificationDto, @Headers('x-webhook-token') token: string) {
+    this.logger.log(`Address change notification: ${JSON.stringify(dto)}`);
+    
+    const webhookToken = process.env.WEBHOOK_TOKEN || 'your-webhook-secret';
+    if (token !== webhookToken) {
+      return {
+        success: false,
+        message: 'Invalid webhook token',
+      };
+    }
+
+    return this.notificationsService.sendAddressChangeNotification(dto);
   }
 }
 

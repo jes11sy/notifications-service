@@ -13,6 +13,8 @@ export const NotificationTypes = [
   'order_in_modern',     // Заказ в модерне (мастер)
   'close_order_reminder',     // Напоминание закрыть заказ (мастер)
   'modern_closing_reminder',  // Напоминание о закрытии модерна (мастер)
+  'city_change',         // Изменение города (директоры обоих городов + мастер если был)
+  'address_change',      // Изменение адреса (директор + мастер если назначен)
 ] as const;
 
 export type NotificationType = typeof NotificationTypes[number];
@@ -408,6 +410,100 @@ export class ModernClosingReminderNotificationDto {
   @IsNumber()
   @IsOptional()
   daysUntilClosing?: number;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  rk?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  avitoName?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  typeEquipment?: string;
+
+  @ApiProperty({ required: false })
+  @IsDateString()
+  @IsOptional()
+  dateMeeting?: string;
+}
+
+// DTO для уведомления об изменении города
+export class CityChangeNotificationDto {
+  @ApiProperty()
+  @IsNumber()
+  orderId: number;
+
+  @ApiProperty({ description: 'Старый город' })
+  @IsString()
+  oldCity: string;
+
+  @ApiProperty({ description: 'Новый город' })
+  @IsString()
+  newCity: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  clientName?: string;
+
+  @ApiProperty({ required: false, description: 'ID мастера, который был назначен (для уведомления ему)' })
+  @IsNumber()
+  @IsOptional()
+  masterId?: number;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  rk?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  avitoName?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  typeEquipment?: string;
+
+  @ApiProperty({ required: false })
+  @IsDateString()
+  @IsOptional()
+  dateMeeting?: string;
+}
+
+// DTO для уведомления об изменении адреса
+export class AddressChangeNotificationDto {
+  @ApiProperty()
+  @IsNumber()
+  orderId: number;
+
+  @ApiProperty()
+  @IsString()
+  city: string;
+
+  @ApiProperty({ description: 'Старый адрес' })
+  @IsString()
+  oldAddress: string;
+
+  @ApiProperty({ description: 'Новый адрес' })
+  @IsString()
+  newAddress: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  clientName?: string;
+
+  @ApiProperty({ required: false, description: 'ID мастера, если назначен' })
+  @IsNumber()
+  @IsOptional()
+  masterId?: number;
 
   @ApiProperty({ required: false })
   @IsString()

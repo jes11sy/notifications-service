@@ -254,6 +254,108 @@ export const MESSAGE_TEMPLATES = {
 ${daysInfo}`;
     },
   },
+
+  // Уведомление об изменении города (для директора старого города)
+  city_change_old_city: {
+    recipientType: 'director',
+    format: (data: any) => {
+      const formatDateIfNeeded = (dateStr: string | undefined): string => {
+        if (!dateStr) return 'Не указано';
+        if (/^\d{2}\.\d{2}\.\d{4}, \d{2}:\d{2}$/.test(dateStr)) {
+          return dateStr;
+        }
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) return 'Не указано';
+        return date.toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+      };
+      
+      const dateMeeting = formatDateIfNeeded(data.dateMeeting);
+      const masterInfo = data.hadMaster ? '\n⚠️ Мастер снят с заказа' : '';
+
+      return `🏙 Заказ №${data.orderId} перенесен в другой город
+
+${data.oldCity} → ${data.newCity}
+
+РК: ${data.rk && data.rk.trim() ? data.rk : 'Не указано'}
+Авито: ${data.avitoName && data.avitoName.trim() ? data.avitoName : 'Не указано'}
+Направление: ${data.typeEquipment && data.typeEquipment.trim() ? data.typeEquipment : 'БТ'}
+
+👤 Клиент: ${data.clientName || 'Не указано'}
+🗓 Дата встречи: ${dateMeeting}${masterInfo}`;
+    },
+  },
+
+  // Уведомление об изменении города (для директора нового города)
+  city_change_new_city: {
+    recipientType: 'director',
+    format: (data: any) => {
+      const formatDateIfNeeded = (dateStr: string | undefined): string => {
+        if (!dateStr) return 'Не указано';
+        if (/^\d{2}\.\d{2}\.\d{4}, \d{2}:\d{2}$/.test(dateStr)) {
+          return dateStr;
+        }
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) return 'Не указано';
+        return date.toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+      };
+      
+      const dateMeeting = formatDateIfNeeded(data.dateMeeting);
+
+      return `📥 Заказ №${data.orderId} перенесен в ваш город
+
+Из города: ${data.oldCity}
+
+РК: ${data.rk && data.rk.trim() ? data.rk : 'Не указано'}
+Авито: ${data.avitoName && data.avitoName.trim() ? data.avitoName : 'Не указано'}
+Направление: ${data.typeEquipment && data.typeEquipment.trim() ? data.typeEquipment : 'БТ'}
+
+👤 Клиент: ${data.clientName || 'Не указано'}
+🗓 Дата встречи: ${dateMeeting}
+
+⚠️ Требуется назначить мастера`;
+    },
+  },
+
+  // Уведомление мастеру о снятии с заказа из-за смены города
+  city_change: {
+    recipientType: 'master',
+    format: (data: any) => {
+      return `❌ Вы сняты с заказа №${data.orderId}
+
+Причина: город изменен с ${data.oldCity} на ${data.newCity}
+
+👤 Клиент: ${data.clientName || 'Не указано'}`;
+    },
+  },
+
+  // Уведомление об изменении адреса (директору и мастеру)
+  address_change: {
+    recipientType: 'both',
+    format: (data: any) => {
+      const formatDateIfNeeded = (dateStr: string | undefined): string => {
+        if (!dateStr) return 'Не указано';
+        if (/^\d{2}\.\d{2}\.\d{4}, \d{2}:\d{2}$/.test(dateStr)) {
+          return dateStr;
+        }
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) return 'Не указано';
+        return date.toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+      };
+      
+      const dateMeeting = formatDateIfNeeded(data.dateMeeting);
+
+      return `📍 Адрес заказа №${data.orderId} изменен
+
+${data.oldAddress} → ${data.newAddress}
+
+РК: ${data.rk && data.rk.trim() ? data.rk : 'Не указано'}
+Авито: ${data.avitoName && data.avitoName.trim() ? data.avitoName : 'Не указано'}
+Направление: ${data.typeEquipment && data.typeEquipment.trim() ? data.typeEquipment : 'БТ'}
+
+👤 Клиент: ${data.clientName || 'Не указано'}
+🗓 Дата встречи: ${dateMeeting}${data.city ? `\n🏙 Город: ${data.city}` : ''}`;
+    },
+  },
 };
 
 export type MessageType = keyof typeof MESSAGE_TEMPLATES;

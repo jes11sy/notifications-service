@@ -13,6 +13,8 @@ import {
   OrderInModernNotificationDto,
   CloseOrderReminderNotificationDto,
   ModernClosingReminderNotificationDto,
+  CityChangeNotificationDto,
+  AddressChangeNotificationDto,
 } from './dto/notification.dto';
 import { MESSAGE_TEMPLATES, MessageType } from './message-templates';
 
@@ -694,6 +696,247 @@ export class NotificationsService {
         daysUntilClosing: orderData.daysUntilClosing,
       },
     });
+  }
+
+  /**
+   * Уведомление об изменении города
+   * - Директору старого города
+   * - Директору нового города
+   * - Мастеру (если был назначен)
+   */
+  async sendCityChangeNotification(dto: CityChangeNotificationDto) {
+    const results = [];
+
+    // Загружаем данные заказа из БД
+    let orderData = {
+      clientName: dto.clientName,
+      rk: dto.rk,
+      avitoName: dto.avitoName,
+      typeEquipment: dto.typeEquipment,
+      dateMeeting: dto.dateMeeting,
+    };
+
+    try {
+      const order = await this.prisma.order.findUnique({
+        where: { id: dto.orderId },
+        select: {
+          clientName: true,
+          rk: true,
+          avitoName: true,
+          typeEquipment: true,
+          dateMeeting: true,
+        },
+      });
+
+      if (order) {
+        orderData = {
+          clientName: dto.clientName || order.clientName,
+          rk: dto.rk || order.rk,
+          avitoName: dto.avitoName || order.avitoName,
+          typeEquipment: dto.typeEquipment || order.typeEquipment,
+          dateMeeting: dto.dateMeeting || order.dateMeeting?.toISOString(),
+        };
+      }
+    } catch (error) {
+      this.logger.error(`Failed to fetch order data for order #${dto.orderId}: ${error.message}`);
+    }
+
+    const hadMaster = !!dto.masterId;
+
+    // 1. Уведомление директору старого города
+    const oldCityDirectors = await this.prisma.director.findMany({
+      where: {
+        cities: { has: dto.oldCity },
+        tgId: { not: null },
+      },
+    });
+
+    for (const director of oldCityDirectors) {
+      try {
+        const template = MESSAGE_TEMPLATES['city_change_old_city' as MessageType];
+        const message = template.format({
+          orderId: dto.orderId,
+          oldCity: dto.oldCity,
+          newCity: dto.newCity,
+          clientName: orderData.clientName,
+          rk: orderData.rk,
+          avitoName: orderData.avitoName,
+          typeEquipment: orderData.typeEquipment,
+          dateMeeting: orderData.dateMeeting,
+          hadMaster,
+        });
+
+        const sent = await this.telegram.sendMessage(director.tgId, message, [{
+          text: '📋 Открыть заказ',
+          url: `https://new.lead-schem.ru/orders/${dto.orderId}`
+        }]);
+
+        results.push({
+          recipient: 'director_old_city',
+          directorId: director.id,
+          success: sent,
+        });
+      } catch (error) {
+        this.logger.error(`Error sending city change notification to old city director ${director.id}: ${error.message}`);
+        results.push({
+          recipient: 'director_old_city',
+          directorId: director.id,
+          success: false,
+          error: error.message,
+        });
+      }
+    }
+
+    // 2. Уведомление директору нового города
+    const newCityDirectors = await this.prisma.director.findMany({
+      where: {
+        cities: { has: dto.newCity },
+        tgId: { not: null },
+      },
+    });
+
+    for (const director of newCityDirectors) {
+      try {
+        const template = MESSAGE_TEMPLATES['city_change_new_city' as MessageType];
+        const message = template.format({
+          orderId: dto.orderId,
+          oldCity: dto.oldCity,
+          newCity: dto.newCity,
+          clientName: orderData.clientName,
+          rk: orderData.rk,
+          avitoName: orderData.avitoName,
+          typeEquipment: orderData.typeEquipment,
+          dateMeeting: orderData.dateMeeting,
+        });
+
+        const sent = await this.telegram.sendMessage(director.tgId, message, [{
+          text: '📋 Открыть заказ',
+          url: `https://new.lead-schem.ru/orders/${dto.orderId}`
+        }]);
+
+        results.push({
+          recipient: 'director_new_city',
+          directorId: director.id,
+          success: sent,
+        });
+      } catch (error) {
+        this.logger.error(`Error sending city change notification to new city director ${director.id}: ${error.message}`);
+        results.push({
+          recipient: 'director_new_city',
+          directorId: director.id,
+          success: false,
+          error: error.message,
+        });
+      }
+    }
+
+    // 3. Уведомление мастеру (если был назначен)
+    if (dto.masterId) {
+      const masterResult = await this.sendNotification({
+        type: 'city_change',
+        orderId: dto.orderId,
+        masterId: dto.masterId,
+        data: {
+          oldCity: dto.oldCity,
+          newCity: dto.newCity,
+          clientName: orderData.clientName,
+        },
+      });
+      results.push({ recipient: 'master', ...masterResult });
+    }
+
+    return {
+      success: results.length > 0 && results.some(r => r.success),
+      message: 'City change notifications processed',
+      data: results,
+    };
+  }
+
+  /**
+   * Уведомление об изменении адреса
+   * - Директору города
+   * - Мастеру (если назначен)
+   */
+  async sendAddressChangeNotification(dto: AddressChangeNotificationDto) {
+    const results = [];
+
+    // Загружаем данные заказа из БД
+    let orderData = {
+      clientName: dto.clientName,
+      rk: dto.rk,
+      avitoName: dto.avitoName,
+      typeEquipment: dto.typeEquipment,
+      dateMeeting: dto.dateMeeting,
+    };
+
+    try {
+      const order = await this.prisma.order.findUnique({
+        where: { id: dto.orderId },
+        select: {
+          clientName: true,
+          rk: true,
+          avitoName: true,
+          typeEquipment: true,
+          dateMeeting: true,
+        },
+      });
+
+      if (order) {
+        orderData = {
+          clientName: dto.clientName || order.clientName,
+          rk: dto.rk || order.rk,
+          avitoName: dto.avitoName || order.avitoName,
+          typeEquipment: dto.typeEquipment || order.typeEquipment,
+          dateMeeting: dto.dateMeeting || order.dateMeeting?.toISOString(),
+        };
+      }
+    } catch (error) {
+      this.logger.error(`Failed to fetch order data for order #${dto.orderId}: ${error.message}`);
+    }
+
+    // 1. Уведомление директору
+    const directorResult = await this.sendNotification({
+      type: 'address_change',
+      orderId: dto.orderId,
+      city: dto.city,
+      data: {
+        oldAddress: dto.oldAddress,
+        newAddress: dto.newAddress,
+        clientName: orderData.clientName,
+        rk: orderData.rk,
+        avitoName: orderData.avitoName,
+        typeEquipment: orderData.typeEquipment,
+        dateMeeting: orderData.dateMeeting,
+        city: dto.city,
+      },
+    });
+    results.push({ recipient: 'director', ...directorResult });
+
+    // 2. Уведомление мастеру (если назначен)
+    if (dto.masterId) {
+      const masterResult = await this.sendNotification({
+        type: 'address_change',
+        orderId: dto.orderId,
+        masterId: dto.masterId,
+        data: {
+          oldAddress: dto.oldAddress,
+          newAddress: dto.newAddress,
+          clientName: orderData.clientName,
+          rk: orderData.rk,
+          avitoName: orderData.avitoName,
+          typeEquipment: orderData.typeEquipment,
+          dateMeeting: orderData.dateMeeting,
+          city: dto.city,
+        },
+      });
+      results.push({ recipient: 'master', ...masterResult });
+    }
+
+    return {
+      success: results.every(r => r.success),
+      message: 'Address change notifications sent',
+      data: results,
+    };
   }
 }
 
