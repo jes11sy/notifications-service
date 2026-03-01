@@ -11,15 +11,10 @@ export class MastersService {
       select: {
         id: true,
         name: true,
-        login: true,
-        cities: true,
-        statusWork: true,
-        tgId: true,
+        cityIds: true,
+        status: true,
         chatId: true,
-        dateCreate: true,
-        note: true,
         createdAt: true,
-        updatedAt: true,
       },
       orderBy: { name: 'asc' },
     });
@@ -36,17 +31,10 @@ export class MastersService {
       select: {
         id: true,
         name: true,
-        login: true,
-        cities: true,
-        statusWork: true,
-        tgId: true,
+        cityIds: true,
+        status: true,
         chatId: true,
-        passportDoc: true,
-        contractDoc: true,
-        dateCreate: true,
-        note: true,
         createdAt: true,
-        updatedAt: true,
       },
     });
 
@@ -72,13 +60,11 @@ export class MastersService {
     const updated = await this.prisma.master.update({
       where: { id },
       data: {
-        tgId: dto.tgId !== undefined ? dto.tgId : master.tgId,
         chatId: dto.chatId !== undefined ? dto.chatId : master.chatId,
       },
       select: {
         id: true,
         name: true,
-        tgId: true,
         chatId: true,
       },
     });
@@ -102,12 +88,12 @@ export class MastersService {
     const updated = await this.prisma.master.update({
       where: { id },
       data: {
-        cities: dto.cities,
+        cityIds: dto.cityIds,
       },
       select: {
         id: true,
         name: true,
-        cities: true,
+        cityIds: true,
       },
     });
 
@@ -118,17 +104,16 @@ export class MastersService {
     };
   }
 
-  async getMastersByCities(cities: string[]) {
+  async getMastersByCityIds(cityIds: number[]) {
     const masters = await this.prisma.master.findMany({
       where: {
-        cities: { hasSome: cities },
-        tgId: { not: null },
+        cityIds: { hasSome: cityIds },
+        chatId: { not: null },
       },
       select: {
         id: true,
         name: true,
-        cities: true,
-        tgId: true,
+        cityIds: true,
         chatId: true,
       },
     });
@@ -139,4 +124,3 @@ export class MastersService {
     };
   }
 }
-

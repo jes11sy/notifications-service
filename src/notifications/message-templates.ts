@@ -7,7 +7,6 @@ export const MESSAGE_TEMPLATES = {
     format: (data: any) => `🆕 Поступил новый заказ №${data.orderId}
 
 РК: ${data.rk || 'Не указано'}
-Авито: ${data.avitoName || 'Не указано'}
 Направление: ${data.typeEquipment || 'БТ'}
 
 👤 Клиент: ${data.clientName}
@@ -27,7 +26,6 @@ export const MESSAGE_TEMPLATES = {
       return `📅 Заказ №${data.orderId} перенесен на ${newDate}
 
 РК: ${data.rk && data.rk.trim() ? data.rk : 'Не указано'}
-Авито: ${data.avitoName && data.avitoName.trim() ? data.avitoName : 'Не указано'}
 Направление: ${data.typeEquipment && data.typeEquipment.trim() ? data.typeEquipment : 'БТ'}
 
 👤 Клиент: ${data.clientName}
@@ -74,7 +72,6 @@ export const MESSAGE_TEMPLATES = {
       return `${title}
 
 РК: ${data.rk && data.rk.trim() ? data.rk : 'Не указано'}
-Авито: ${data.avitoName && data.avitoName.trim() ? data.avitoName : 'Не указано'}
 Направление: ${data.typeEquipment && data.typeEquipment.trim() ? data.typeEquipment : 'БТ'}
 
 👤 Клиент: ${data.clientName}
@@ -92,7 +89,6 @@ export const MESSAGE_TEMPLATES = {
       return `👷 Вам назначен заказ №${data.orderId}
 
 РК: ${data.rk && data.rk.trim() ? data.rk : 'Не указано'}
-Авито: ${data.avitoName && data.avitoName.trim() ? data.avitoName : 'Не указано'}
 Направление: ${data.typeEquipment && data.typeEquipment.trim() ? data.typeEquipment : 'БТ'}
 
 👤 Клиент: ${data.clientName && data.clientName.trim() ? data.clientName : 'Не указано'}
@@ -116,7 +112,6 @@ export const MESSAGE_TEMPLATES = {
       return `✅ Заказ №${data.orderId} принят
 
 РК: ${data.rk && data.rk.trim() ? data.rk : 'Не указано'}
-Авито: ${data.avitoName && data.avitoName.trim() ? data.avitoName : 'Не указано'}
 Направление: ${data.typeEquipment && data.typeEquipment.trim() ? data.typeEquipment : 'БТ'}
 
 👤 Клиент: ${data.clientName && data.clientName.trim() ? data.clientName : 'Не указано'}
@@ -165,7 +160,6 @@ export const MESSAGE_TEMPLATES = {
       return `🕐 Заказ №${data.orderId} в модерне
 
 РК: ${data.rk && data.rk.trim() ? data.rk : 'Не указано'}
-Авито: ${data.avitoName && data.avitoName.trim() ? data.avitoName : 'Не указано'}
 Направление: ${data.typeEquipment && data.typeEquipment.trim() ? data.typeEquipment : 'БТ'}
 
 👤 Клиент: ${data.clientName}
@@ -201,7 +195,6 @@ export const MESSAGE_TEMPLATES = {
       return `⚠️ Закройте заказ №${data.orderId}
 
 РК: ${data.rk && data.rk.trim() ? data.rk : 'Не указано'}
-Авито: ${data.avitoName && data.avitoName.trim() ? data.avitoName : 'Не указано'}
 Направление: ${data.typeEquipment && data.typeEquipment.trim() ? data.typeEquipment : 'БТ'}
 
 👤 Клиент: ${data.clientName}
@@ -245,7 +238,6 @@ export const MESSAGE_TEMPLATES = {
 📋 Заказ №${data.orderId}
 
 РК: ${data.rk && data.rk.trim() ? data.rk : 'Не указано'}
-Авито: ${data.avitoName && data.avitoName.trim() ? data.avitoName : 'Не указано'}
 Направление: ${data.typeEquipment && data.typeEquipment.trim() ? data.typeEquipment : 'БТ'}
 
 👤 Клиент: ${data.clientName}
@@ -277,7 +269,6 @@ ${daysInfo}`;
 ${data.oldCity} → ${data.newCity}
 
 РК: ${data.rk && data.rk.trim() ? data.rk : 'Не указано'}
-Авито: ${data.avitoName && data.avitoName.trim() ? data.avitoName : 'Не указано'}
 Направление: ${data.typeEquipment && data.typeEquipment.trim() ? data.typeEquipment : 'БТ'}
 
 👤 Клиент: ${data.clientName || 'Не указано'}
@@ -306,7 +297,6 @@ ${data.oldCity} → ${data.newCity}
 Из города: ${data.oldCity}
 
 РК: ${data.rk && data.rk.trim() ? data.rk : 'Не указано'}
-Авито: ${data.avitoName && data.avitoName.trim() ? data.avitoName : 'Не указано'}
 Направление: ${data.typeEquipment && data.typeEquipment.trim() ? data.typeEquipment : 'БТ'}
 
 👤 Клиент: ${data.clientName || 'Не указано'}
@@ -349,7 +339,6 @@ ${data.oldCity} → ${data.newCity}
 ${data.oldAddress} → ${data.newAddress}
 
 РК: ${data.rk && data.rk.trim() ? data.rk : 'Не указано'}
-Авито: ${data.avitoName && data.avitoName.trim() ? data.avitoName : 'Не указано'}
 Направление: ${data.typeEquipment && data.typeEquipment.trim() ? data.typeEquipment : 'БТ'}
 
 👤 Клиент: ${data.clientName || 'Не указано'}
@@ -359,4 +348,5 @@ ${data.oldAddress} → ${data.newAddress}
 };
 
 export type MessageType = keyof typeof MESSAGE_TEMPLATES;
+
 

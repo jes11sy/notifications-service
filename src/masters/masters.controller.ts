@@ -13,7 +13,7 @@ export class MastersController {
   @Get()
   @UseGuards(CookieJwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
-  @Roles(UserRole.DIRECTOR, UserRole.CALLCENTRE_ADMIN)
+  @Roles(UserRole.DIRECTOR, UserRole.ADMIN)
   @ApiOperation({ summary: 'Get all masters' })
   async getAllMasters() {
     return this.mastersService.getAllMasters();
@@ -22,7 +22,7 @@ export class MastersController {
   @Get('by-cities')
   @UseGuards(CookieJwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
-  @Roles(UserRole.DIRECTOR, UserRole.CALLCENTRE_ADMIN)
+  @Roles(UserRole.DIRECTOR, UserRole.ADMIN)
   @ApiOperation({ summary: 'Get masters by cities' })
   async getMastersByCities(@Query('cities') cities: string) {
     const cityArray = cities.split(',').map(c => c.trim());
@@ -32,7 +32,7 @@ export class MastersController {
   @Get(':id')
   @UseGuards(CookieJwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
-  @Roles(UserRole.DIRECTOR, UserRole.CALLCENTRE_ADMIN)
+  @Roles(UserRole.DIRECTOR, UserRole.ADMIN)
   @ApiOperation({ summary: 'Get master by ID' })
   async getMasterById(@Param('id') id: string) {
     return this.mastersService.getMasterById(+id);
@@ -41,7 +41,7 @@ export class MastersController {
   @Put(':id/telegram')
   @UseGuards(CookieJwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
-  @Roles(UserRole.DIRECTOR, UserRole.CALLCENTRE_ADMIN)
+  @Roles(UserRole.DIRECTOR, UserRole.ADMIN)
   @ApiOperation({ summary: 'Update master Telegram data' })
   async updateMasterTelegram(
     @Param('id') id: string,
@@ -53,7 +53,7 @@ export class MastersController {
   @Put(':id/cities')
   @UseGuards(CookieJwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
-  @Roles(UserRole.DIRECTOR, UserRole.CALLCENTRE_ADMIN)
+  @Roles(UserRole.DIRECTOR, UserRole.ADMIN)
   @ApiOperation({ summary: 'Update master cities' })
   async updateMasterCities(
     @Param('id') id: string,

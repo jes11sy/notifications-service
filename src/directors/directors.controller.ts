@@ -13,7 +13,7 @@ export class DirectorsController {
   @Get()
   @UseGuards(CookieJwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
-  @Roles(UserRole.DIRECTOR, UserRole.CALLCENTRE_ADMIN)
+  @Roles(UserRole.DIRECTOR, UserRole.ADMIN)
   @ApiOperation({ summary: 'Get all directors' })
   async getDirectors() {
     return this.directorsService.getDirectors();
@@ -22,7 +22,7 @@ export class DirectorsController {
   @Get(':id')
   @UseGuards(CookieJwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
-  @Roles(UserRole.DIRECTOR, UserRole.CALLCENTRE_ADMIN)
+  @Roles(UserRole.DIRECTOR, UserRole.ADMIN)
   @ApiOperation({ summary: 'Get director by ID' })
   async getDirector(@Param('id') id: string) {
     return this.directorsService.getDirector(+id);
@@ -31,7 +31,7 @@ export class DirectorsController {
   @Put(':id/telegram')
   @UseGuards(CookieJwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
-  @Roles(UserRole.DIRECTOR, UserRole.CALLCENTRE_ADMIN)
+  @Roles(UserRole.DIRECTOR, UserRole.ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Update director Telegram data' })
   async updateTelegram(@Param('id') id: string, @Body() dto: UpdateTelegramDto) {

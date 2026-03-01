@@ -44,13 +44,22 @@ export class RemindersService {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      // Находим заказы в статусе "Модерн"
+      // Находим statusId для статуса "modern"
+      const modernStatus = await this.prisma.$queryRaw<{ id: number }[]>`
+        SELECT id FROM references_service.order_statuses WHERE code = 'modern' LIMIT 1
+      `;
+      const modernStatusId = modernStatus[0]?.id;
+
+      if (!modernStatusId) {
+        this.logger.warn('Modern status ID not found in references_service.order_statuses');
+        return;
+      }
+
+      // Находим заказы в статусе "modern"
       const orders = await this.prisma.order.findMany({
         where: {
-          statusOrder: 'Модерн',
-          masterId: {
-            not: null,
-          },
+          statusId: modernStatusId,
+          masterId: { not: null },
         },
         include: {
           master: true,
@@ -69,8 +78,8 @@ export class RemindersService {
         let isOverdue = false;
 
         // Случай 1: Есть дата закрытия модерна
-        if (order.dateClosmod) {
-          const closingDate = new Date(order.dateClosmod);
+        if (order.dateCloseMod) {
+          const closingDate = new Date(order.dateCloseMod);
           closingDate.setHours(0, 0, 0, 0);
 
           // В день закрытия или если уже просрочено
@@ -110,7 +119,7 @@ export class RemindersService {
             orderId: order.id,
             masterId: order.masterId!,
             clientName: order.clientName,
-            expectedClosingDate: order.dateClosmod ? order.dateClosmod.toISOString() : undefined,
+            expectedClosingDate: order.dateCloseMod ? order.dateCloseMod.toISOString() : undefined,
             daysUntilClosing: isOverdue ? -daysUntilClosing : daysUntilClosing,
           });
 

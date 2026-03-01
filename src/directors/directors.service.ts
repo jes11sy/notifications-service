@@ -11,9 +11,10 @@ export class DirectorsService {
       select: {
         id: true,
         name: true,
-        cities: true,
+        cityIds: true,
         tgId: true,
-        dateCreate: true,
+        chatId: true,
+        status: true,
       },
       orderBy: { name: 'asc' },
     });
@@ -54,4 +55,3 @@ export class DirectorsService {
     };
   }
 }
-

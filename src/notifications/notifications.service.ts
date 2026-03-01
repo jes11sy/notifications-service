@@ -20,9 +20,8 @@ import { MESSAGE_TEMPLATES, MessageType } from './message-templates';
 
 @Injectable()
 export class NotificationsService {
-  private readonly logger = new Logger(NotificationsService.name)
+  private readonly logger = new Logger(NotificationsService.name);
 
-  // Единая функция форматирования даты с проверкой валидности
   private formatDate(dateString: string | undefined, format: Intl.DateTimeFormatOptions = {
     day: '2-digit',
     month: '2-digit',
@@ -31,12 +30,11 @@ export class NotificationsService {
     minute: '2-digit'
   }): string {
     if (!dateString) return 'Не указано';
-    
-    // Если дата уже отформатирована (содержит запятую и двоеточие), возвращаем как есть
+
     if (typeof dateString === 'string' && /^\d{2}\.\d{2}\.\d{4}, \d{2}:\d{2}$/.test(dateString)) {
       return dateString;
     }
-    
+
     const date = new Date(dateString);
     if (isNaN(date.getTime())) {
       this.logger.warn(`Invalid date format: ${dateString}`);
@@ -45,24 +43,51 @@ export class NotificationsService {
     return date.toLocaleString('ru-RU', format);
   }
 
-  // Форматирование даты без времени
   private formatDateOnly(dateString: string | undefined): string {
     return this.formatDate(dateString, {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric'
     });
-  };
+  }
 
   constructor(
     private prisma: PrismaService,
     private telegram: TelegramService,
   ) {}
 
+  /**
+   * Find city ID by city name for director lookup
+   */
+  private async getCityIdByName(cityName: string): Promise<number | null> {
+    try {
+      const city = await this.prisma.city.findFirst({ where: { name: cityName } });
+      return city?.id ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Find directors for a city name
+   */
+  private async findDirectorsByCity(cityName: string) {
+    const cityId = await this.getCityIdByName(cityName);
+    if (!cityId) {
+      this.logger.warn(`City not found: ${cityName}`);
+      return [];
+    }
+    return this.prisma.director.findMany({
+      where: {
+        cityIds: { has: cityId },
+        tgId: { not: null },
+      },
+    });
+  }
+
   async sendNotification(dto: SendNotificationDto) {
     const { type, orderId, city, masterId, data } = dto;
 
-    // Получаем шаблон из хардкода
     const template = MESSAGE_TEMPLATES[type as MessageType];
 
     if (!template) {
@@ -75,15 +100,8 @@ export class NotificationsService {
     const results = [];
     const messageData = { orderId, city, ...data };
 
-    // Определяем тип получателя по типу уведомления
     if ((template.recipientType === 'director' || template.recipientType === 'both') && city) {
-      // Отправка директорам
-      const directors = await this.prisma.director.findMany({
-        where: {
-          cities: { has: city },
-          tgId: { not: null },
-        },
-      });
+      const directors = await this.findDirectorsByCity(city);
 
       if (directors.length === 0) {
         this.logger.warn(`No directors found for city: ${city}`);
@@ -93,41 +111,37 @@ export class NotificationsService {
         };
       }
 
-      // Формируем сообщение
       const message = template.format(messageData);
 
-      // Добавляем кнопку со ссылкой на заказ для директоров
       const directorButtons: Array<{text: string, url: string}> = [{
         text: '📋 Открыть заказ',
         url: `https://new.lead-schem.ru/orders/${orderId}`
       }];
 
-      // Отправляем уведомления всем директорам
       for (const director of directors) {
-      try {
-        const sent = await this.telegram.sendMessage(director.tgId, message, directorButtons);
+        try {
+          const sent = await this.telegram.sendMessage(director.tgId, message, directorButtons);
 
-        results.push({
-          recipientType: 'director',
-          directorId: director.id,
-          directorName: director.name,
-          success: sent,
-        });
-      } catch (error) {
-        this.logger.error(`Error sending notification to director ${director.id}: ${error.message}`);
-        results.push({
-          recipientType: 'director',
-          directorId: director.id,
-          directorName: director.name,
-          success: false,
-          error: error.message,
-        });
+          results.push({
+            recipientType: 'director',
+            directorId: director.id,
+            directorName: director.name,
+            success: sent,
+          });
+        } catch (error) {
+          this.logger.error(`Error sending notification to director ${director.id}: ${error.message}`);
+          results.push({
+            recipientType: 'director',
+            directorId: director.id,
+            directorName: director.name,
+            success: false,
+            error: error.message,
+          });
+        }
       }
-      }
-    } 
-    
+    }
+
     if ((template.recipientType === 'master' || template.recipientType === 'both') && masterId) {
-      // Отправка мастеру
       const master = await this.prisma.master.findUnique({
         where: { id: masterId },
       });
@@ -148,10 +162,8 @@ export class NotificationsService {
         };
       }
 
-      // Формируем сообщение
       const message = template.format(messageData);
 
-      // Добавляем кнопку со ссылкой на заказ для определенных типов уведомлений
       let buttons: Array<{text: string, url: string}> | undefined;
       if (['master_assigned', 'close_order_reminder', 'modern_closing_reminder'].includes(type as string)) {
         buttons = [{
@@ -200,7 +212,6 @@ export class NotificationsService {
         dateMeeting: this.formatDate(dto.dateMeeting),
         problem: dto.problem,
         rk: dto.rk || 'Не указано',
-        avitoName: dto.avitoName || 'Не указано',
         typeEquipment: dto.typeEquipment || 'БТ',
       },
     });
@@ -209,18 +220,8 @@ export class NotificationsService {
   async sendDateChangeNotification(dto: DateChangeNotificationDto) {
     const results = [];
 
-    const dateFormat = { 
-      day: '2-digit', 
-      month: '2-digit', 
-      year: 'numeric', 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    } as const;
-
-    // Загружаем данные заказа из БД
     let orderData = {
       rk: undefined as string | undefined,
-      avitoName: undefined as string | undefined,
       typeEquipment: undefined as string | undefined,
       address: undefined as string | undefined,
     };
@@ -228,19 +229,16 @@ export class NotificationsService {
     try {
       const order = await this.prisma.order.findUnique({
         where: { id: dto.orderId },
-        select: {
-          rk: true,
-          avitoName: true,
-          typeEquipment: true,
-          address: true,
+        include: {
+          rk: { select: { name: true } },
+          equipmentType: { select: { name: true } },
         },
       });
 
       if (order) {
         orderData = {
-          rk: order.rk,
-          avitoName: order.avitoName,
-          typeEquipment: order.typeEquipment,
+          rk: order.rk.name,
+          typeEquipment: order.equipmentType.name,
           address: order.address,
         };
       }
@@ -248,8 +246,6 @@ export class NotificationsService {
       this.logger.error(`Failed to fetch order data for order #${dto.orderId}: ${error.message}`);
     }
 
-
-    // Отправляем уведомление директору
     const directorResult = await this.sendNotification({
       type: 'date_change',
       orderId: dto.orderId,
@@ -257,7 +253,6 @@ export class NotificationsService {
       data: {
         clientName: dto.clientName,
         rk: orderData.rk,
-        avitoName: orderData.avitoName,
         typeEquipment: orderData.typeEquipment,
         address: dto.address || orderData.address,
         newDate: this.formatDate(dto.newDate),
@@ -266,7 +261,6 @@ export class NotificationsService {
     });
     results.push({ recipient: 'director', ...directorResult });
 
-    // Если мастер назначен, отправляем ему тоже
     if (dto.masterId) {
       const masterResult = await this.sendNotification({
         type: 'date_change',
@@ -275,7 +269,6 @@ export class NotificationsService {
         data: {
           clientName: dto.clientName,
           rk: orderData.rk,
-          avitoName: orderData.avitoName,
           typeEquipment: orderData.typeEquipment,
           address: dto.address || orderData.address,
           newDate: this.formatDate(dto.newDate),
@@ -295,13 +288,11 @@ export class NotificationsService {
   async sendOrderRejectionNotification(dto: OrderRejectionNotificationDto) {
     const results = [];
 
-    // Запрашиваем данные из БД, если не все поля переданы
     let orderData = {
       clientName: dto.clientName,
       phone: dto.phone,
       city: dto.city,
       rk: dto.rk,
-      avitoName: dto.avitoName,
       typeEquipment: dto.typeEquipment,
       dateMeeting: dto.dateMeeting,
       reason: dto.reason,
@@ -311,14 +302,10 @@ export class NotificationsService {
       try {
         const order = await this.prisma.order.findUnique({
           where: { id: dto.orderId },
-          select: {
-            clientName: true,
-            phone: true,
-            city: true,
-            rk: true,
-            avitoName: true,
-            typeEquipment: true,
-            dateMeeting: true,
+          include: {
+            city: { select: { name: true } },
+            rk: { select: { name: true } },
+            equipmentType: { select: { name: true } },
           },
         });
 
@@ -326,10 +313,9 @@ export class NotificationsService {
           orderData = {
             clientName: dto.clientName || order.clientName,
             phone: dto.phone || order.phone,
-            city: dto.city || order.city,
-            rk: dto.rk || order.rk,
-            avitoName: dto.avitoName || order.avitoName,
-            typeEquipment: dto.typeEquipment || order.typeEquipment,
+            city: dto.city || order.city.name,
+            rk: dto.rk || order.rk.name,
+            typeEquipment: dto.typeEquipment || order.equipmentType.name,
             dateMeeting: dto.dateMeeting || order.dateMeeting?.toISOString(),
             reason: dto.reason,
           };
@@ -339,7 +325,6 @@ export class NotificationsService {
       }
     }
 
-    // Отправляем уведомление директору
     const directorResult = await this.sendNotification({
       type: 'order_rejection',
       orderId: dto.orderId,
@@ -349,14 +334,12 @@ export class NotificationsService {
         phone: orderData.phone,
         reason: orderData.reason,
         rk: orderData.rk,
-        avitoName: orderData.avitoName,
         typeEquipment: orderData.typeEquipment,
         dateMeeting: orderData.dateMeeting,
       },
     });
     results.push({ recipient: 'director', ...directorResult });
 
-    // Если мастер назначен, отправляем ему тоже
     if (dto.masterId) {
       const masterResult = await this.sendNotification({
         type: 'order_rejection',
@@ -367,7 +350,6 @@ export class NotificationsService {
           phone: orderData.phone,
           reason: orderData.reason,
           rk: orderData.rk,
-          avitoName: orderData.avitoName,
           typeEquipment: orderData.typeEquipment,
           dateMeeting: orderData.dateMeeting,
         },
@@ -382,7 +364,6 @@ export class NotificationsService {
     };
   }
 
-  // Методы для уведомлений мастерам
   async sendMasterAssignedNotification(dto: MasterAssignedNotificationDto) {
     return this.sendNotification({
       type: 'master_assigned',
@@ -390,7 +371,6 @@ export class NotificationsService {
       masterId: dto.masterId,
       data: {
         rk: dto.rk || 'Не указано',
-        avitoName: dto.avitoName || 'Не указано',
         typeEquipment: dto.typeEquipment || 'БТ',
         clientName: dto.clientName || 'Не указано',
         address: dto.address || 'Не указано',
@@ -403,19 +383,17 @@ export class NotificationsService {
     return this.sendNotification({
       type: 'master_reassigned',
       orderId: dto.orderId,
-      masterId: dto.oldMasterId, // Отправляем старому мастеру
+      masterId: dto.oldMasterId,
       data: {},
     });
   }
 
   async sendOrderAcceptedNotification(dto: OrderAcceptedNotificationDto) {
-    // ВСЕГДА загружаем данные из БД, так как phone и address обычно не передаются в DTO
     let orderData = {
       clientName: dto.clientName,
       phone: undefined as string | undefined,
       address: undefined as string | undefined,
       rk: dto.rk,
-      avitoName: dto.avitoName,
       typeEquipment: dto.typeEquipment,
       dateMeeting: dto.dateMeeting,
     };
@@ -423,14 +401,9 @@ export class NotificationsService {
     try {
       const order = await this.prisma.order.findUnique({
         where: { id: dto.orderId },
-        select: {
-          clientName: true,
-          phone: true,
-          address: true,
-          rk: true,
-          avitoName: true,
-          typeEquipment: true,
-          dateMeeting: true,
+        include: {
+          rk: { select: { name: true } },
+          equipmentType: { select: { name: true } },
         },
       });
 
@@ -439,9 +412,8 @@ export class NotificationsService {
           clientName: dto.clientName || order.clientName,
           phone: order.phone,
           address: order.address,
-          rk: dto.rk || order.rk,
-          avitoName: dto.avitoName || order.avitoName,
-          typeEquipment: dto.typeEquipment || order.typeEquipment,
+          rk: dto.rk || order.rk.name,
+          typeEquipment: dto.typeEquipment || order.equipmentType.name,
           dateMeeting: dto.dateMeeting || order.dateMeeting?.toISOString(),
         };
       }
@@ -458,7 +430,6 @@ export class NotificationsService {
         phone: orderData.phone || undefined,
         address: orderData.address || undefined,
         rk: orderData.rk || undefined,
-        avitoName: orderData.avitoName || undefined,
         typeEquipment: orderData.typeEquipment || undefined,
         dateMeeting: orderData.dateMeeting ? this.formatDate(orderData.dateMeeting) : undefined,
       },
@@ -466,7 +437,6 @@ export class NotificationsService {
   }
 
   async sendOrderClosedNotification(dto: OrderClosedNotificationDto) {
-    // Если данные не переданы, запрашиваем из БД
     let orderData = {
       clientName: dto.clientName,
       closingDate: dto.closingDate,
@@ -476,7 +446,6 @@ export class NotificationsService {
       handover: dto.handover,
     };
 
-    // Если хотя бы одно поле не указано - запрашиваем заказ из БД
     if (!dto.clientName || !dto.total || !dto.expense || !dto.net || !dto.handover) {
       try {
         const order = await this.prisma.order.findUnique({
@@ -487,14 +456,14 @@ export class NotificationsService {
             expenditure: true,
             clean: true,
             masterChange: true,
-            closingData: true,
+            closingAt: true,
           },
         });
 
         if (order) {
           orderData = {
             clientName: dto.clientName || order.clientName,
-            closingDate: dto.closingDate || order.closingData?.toISOString(),
+            closingDate: dto.closingDate || order.closingAt?.toISOString(),
             total: dto.total || order.result?.toString(),
             expense: dto.expense || order.expenditure?.toString(),
             net: dto.net || order.clean?.toString(),
@@ -505,14 +474,6 @@ export class NotificationsService {
         this.logger.error(`Failed to fetch order data for order #${dto.orderId}: ${error.message}`);
       }
     }
-
-    const dateFormat = { 
-      day: '2-digit', 
-      month: '2-digit', 
-      year: 'numeric', 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    } as const;
 
     return this.sendNotification({
       type: 'order_closed',
@@ -530,11 +491,9 @@ export class NotificationsService {
   }
 
   async sendOrderInModernNotification(dto: OrderInModernNotificationDto) {
-    // Если данные не переданы, запрашиваем из БД
     let orderData = {
       clientName: dto.clientName,
       rk: dto.rk,
-      avitoName: dto.avitoName,
       typeEquipment: dto.typeEquipment,
       dateMeeting: dto.dateMeeting,
       prepayment: dto.prepayment,
@@ -546,25 +505,20 @@ export class NotificationsService {
       try {
         const order = await this.prisma.order.findUnique({
           where: { id: dto.orderId },
-          select: {
-            clientName: true,
-            rk: true,
-            avitoName: true,
-            typeEquipment: true,
-            dateMeeting: true,
-            dateClosmod: true,
+          include: {
+            rk: { select: { name: true } },
+            equipmentType: { select: { name: true } },
           },
         });
 
         if (order) {
           orderData = {
             clientName: dto.clientName || order.clientName,
-            rk: dto.rk || order.rk,
-            avitoName: dto.avitoName || order.avitoName,
-            typeEquipment: dto.typeEquipment || order.typeEquipment,
+            rk: dto.rk || order.rk.name,
+            typeEquipment: dto.typeEquipment || order.equipmentType.name,
             dateMeeting: dto.dateMeeting || order.dateMeeting?.toISOString(),
             prepayment: dto.prepayment,
-            expectedClosingDate: dto.expectedClosingDate || order.dateClosmod?.toISOString(),
+            expectedClosingDate: dto.expectedClosingDate || order.dateCloseMod?.toISOString(),
             comment: dto.comment,
           };
         }
@@ -580,7 +534,6 @@ export class NotificationsService {
       data: {
         clientName: orderData.clientName || 'Не указано',
         rk: orderData.rk || undefined,
-        avitoName: orderData.avitoName || undefined,
         typeEquipment: orderData.typeEquipment || undefined,
         dateMeeting: orderData.dateMeeting || undefined,
         prepayment: orderData.prepayment || undefined,
@@ -591,11 +544,9 @@ export class NotificationsService {
   }
 
   async sendCloseOrderReminderNotification(dto: CloseOrderReminderNotificationDto) {
-    // Запрашиваем данные заказа из БД для полноты информации
     let orderData = {
       clientName: dto.clientName,
       rk: undefined as string | undefined,
-      avitoName: undefined as string | undefined,
       typeEquipment: undefined as string | undefined,
       dateMeeting: undefined as string | undefined,
       daysOverdue: dto.daysOverdue || 0,
@@ -604,21 +555,17 @@ export class NotificationsService {
     try {
       const order = await this.prisma.order.findUnique({
         where: { id: dto.orderId },
-        select: {
-          clientName: true,
-          rk: true,
-          avitoName: true,
-          typeEquipment: true,
-          dateMeeting: true,
+        include: {
+          rk: { select: { name: true } },
+          equipmentType: { select: { name: true } },
         },
       });
 
       if (order) {
         orderData = {
           clientName: dto.clientName || order.clientName,
-          rk: order.rk,
-          avitoName: order.avitoName,
-          typeEquipment: order.typeEquipment,
+          rk: order.rk.name,
+          typeEquipment: order.equipmentType.name,
           dateMeeting: order.dateMeeting?.toISOString(),
           daysOverdue: dto.daysOverdue || 0,
         };
@@ -634,7 +581,6 @@ export class NotificationsService {
       data: {
         clientName: orderData.clientName || 'Не указано',
         rk: orderData.rk || undefined,
-        avitoName: orderData.avitoName || undefined,
         typeEquipment: orderData.typeEquipment || undefined,
         dateMeeting: orderData.dateMeeting || undefined,
         daysOverdue: orderData.daysOverdue,
@@ -643,11 +589,9 @@ export class NotificationsService {
   }
 
   async sendModernClosingReminderNotification(dto: ModernClosingReminderNotificationDto) {
-    // Запрашиваем данные заказа из БД для полноты информации
     let orderData = {
       clientName: dto.clientName,
       rk: undefined as string | undefined,
-      avitoName: undefined as string | undefined,
       typeEquipment: undefined as string | undefined,
       dateMeeting: undefined as string | undefined,
       expectedClosingDate: dto.expectedClosingDate,
@@ -657,24 +601,19 @@ export class NotificationsService {
     try {
       const order = await this.prisma.order.findUnique({
         where: { id: dto.orderId },
-        select: {
-          clientName: true,
-          rk: true,
-          avitoName: true,
-          typeEquipment: true,
-          dateMeeting: true,
-          dateClosmod: true,
+        include: {
+          rk: { select: { name: true } },
+          equipmentType: { select: { name: true } },
         },
       });
 
       if (order) {
         orderData = {
           clientName: dto.clientName || order.clientName,
-          rk: order.rk,
-          avitoName: order.avitoName,
-          typeEquipment: order.typeEquipment,
+          rk: order.rk.name,
+          typeEquipment: order.equipmentType.name,
           dateMeeting: order.dateMeeting?.toISOString(),
-          expectedClosingDate: dto.expectedClosingDate || order.dateClosmod?.toISOString(),
+          expectedClosingDate: dto.expectedClosingDate || order.dateCloseMod?.toISOString(),
           daysUntilClosing: dto.daysUntilClosing || 0,
         };
       }
@@ -689,7 +628,6 @@ export class NotificationsService {
       data: {
         clientName: orderData.clientName || 'Не указано',
         rk: orderData.rk || undefined,
-        avitoName: orderData.avitoName || undefined,
         typeEquipment: orderData.typeEquipment || undefined,
         dateMeeting: orderData.dateMeeting || undefined,
         expectedClosingDate: orderData.expectedClosingDate || undefined,
@@ -698,20 +636,12 @@ export class NotificationsService {
     });
   }
 
-  /**
-   * Уведомление об изменении города
-   * - Директору старого города
-   * - Директору нового города
-   * - Мастеру (если был назначен)
-   */
   async sendCityChangeNotification(dto: CityChangeNotificationDto) {
     const results = [];
 
-    // Загружаем данные заказа из БД
     let orderData = {
       clientName: dto.clientName,
       rk: dto.rk,
-      avitoName: dto.avitoName,
       typeEquipment: dto.typeEquipment,
       dateMeeting: dto.dateMeeting,
     };
@@ -719,21 +649,17 @@ export class NotificationsService {
     try {
       const order = await this.prisma.order.findUnique({
         where: { id: dto.orderId },
-        select: {
-          clientName: true,
-          rk: true,
-          avitoName: true,
-          typeEquipment: true,
-          dateMeeting: true,
+        include: {
+          rk: { select: { name: true } },
+          equipmentType: { select: { name: true } },
         },
       });
 
       if (order) {
         orderData = {
           clientName: dto.clientName || order.clientName,
-          rk: dto.rk || order.rk,
-          avitoName: dto.avitoName || order.avitoName,
-          typeEquipment: dto.typeEquipment || order.typeEquipment,
+          rk: dto.rk || order.rk.name,
+          typeEquipment: dto.typeEquipment || order.equipmentType.name,
           dateMeeting: dto.dateMeeting || order.dateMeeting?.toISOString(),
         };
       }
@@ -743,13 +669,7 @@ export class NotificationsService {
 
     const hadMaster = !!dto.masterId;
 
-    // 1. Уведомление директору старого города
-    const oldCityDirectors = await this.prisma.director.findMany({
-      where: {
-        cities: { has: dto.oldCity },
-        tgId: { not: null },
-      },
-    });
+    const oldCityDirectors = await this.findDirectorsByCity(dto.oldCity);
 
     for (const director of oldCityDirectors) {
       try {
@@ -760,7 +680,6 @@ export class NotificationsService {
           newCity: dto.newCity,
           clientName: orderData.clientName,
           rk: orderData.rk,
-          avitoName: orderData.avitoName,
           typeEquipment: orderData.typeEquipment,
           dateMeeting: orderData.dateMeeting,
           hadMaster,
@@ -787,13 +706,7 @@ export class NotificationsService {
       }
     }
 
-    // 2. Уведомление директору нового города
-    const newCityDirectors = await this.prisma.director.findMany({
-      where: {
-        cities: { has: dto.newCity },
-        tgId: { not: null },
-      },
-    });
+    const newCityDirectors = await this.findDirectorsByCity(dto.newCity);
 
     for (const director of newCityDirectors) {
       try {
@@ -804,7 +717,6 @@ export class NotificationsService {
           newCity: dto.newCity,
           clientName: orderData.clientName,
           rk: orderData.rk,
-          avitoName: orderData.avitoName,
           typeEquipment: orderData.typeEquipment,
           dateMeeting: orderData.dateMeeting,
         });
@@ -830,7 +742,6 @@ export class NotificationsService {
       }
     }
 
-    // 3. Уведомление мастеру (если был назначен)
     if (dto.masterId) {
       const masterResult = await this.sendNotification({
         type: 'city_change',
@@ -852,19 +763,12 @@ export class NotificationsService {
     };
   }
 
-  /**
-   * Уведомление об изменении адреса
-   * - Директору города
-   * - Мастеру (если назначен)
-   */
   async sendAddressChangeNotification(dto: AddressChangeNotificationDto) {
     const results = [];
 
-    // Загружаем данные заказа из БД
     let orderData = {
       clientName: dto.clientName,
       rk: dto.rk,
-      avitoName: dto.avitoName,
       typeEquipment: dto.typeEquipment,
       dateMeeting: dto.dateMeeting,
     };
@@ -872,21 +776,17 @@ export class NotificationsService {
     try {
       const order = await this.prisma.order.findUnique({
         where: { id: dto.orderId },
-        select: {
-          clientName: true,
-          rk: true,
-          avitoName: true,
-          typeEquipment: true,
-          dateMeeting: true,
+        include: {
+          rk: { select: { name: true } },
+          equipmentType: { select: { name: true } },
         },
       });
 
       if (order) {
         orderData = {
           clientName: dto.clientName || order.clientName,
-          rk: dto.rk || order.rk,
-          avitoName: dto.avitoName || order.avitoName,
-          typeEquipment: dto.typeEquipment || order.typeEquipment,
+          rk: dto.rk || order.rk.name,
+          typeEquipment: dto.typeEquipment || order.equipmentType.name,
           dateMeeting: dto.dateMeeting || order.dateMeeting?.toISOString(),
         };
       }
@@ -894,7 +794,6 @@ export class NotificationsService {
       this.logger.error(`Failed to fetch order data for order #${dto.orderId}: ${error.message}`);
     }
 
-    // 1. Уведомление директору
     const directorResult = await this.sendNotification({
       type: 'address_change',
       orderId: dto.orderId,
@@ -904,7 +803,6 @@ export class NotificationsService {
         newAddress: dto.newAddress,
         clientName: orderData.clientName,
         rk: orderData.rk,
-        avitoName: orderData.avitoName,
         typeEquipment: orderData.typeEquipment,
         dateMeeting: orderData.dateMeeting,
         city: dto.city,
@@ -912,7 +810,6 @@ export class NotificationsService {
     });
     results.push({ recipient: 'director', ...directorResult });
 
-    // 2. Уведомление мастеру (если назначен)
     if (dto.masterId) {
       const masterResult = await this.sendNotification({
         type: 'address_change',
@@ -923,7 +820,6 @@ export class NotificationsService {
           newAddress: dto.newAddress,
           clientName: orderData.clientName,
           rk: orderData.rk,
-          avitoName: orderData.avitoName,
           typeEquipment: orderData.typeEquipment,
           dateMeeting: orderData.dateMeeting,
           city: dto.city,
@@ -939,4 +835,3 @@ export class NotificationsService {
     };
   }
 }
-

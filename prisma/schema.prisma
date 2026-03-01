@@ -1,120 +1,129 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  schemas  = ["notifications_service", "auth_service", "orders_service", "references_service"]
 }
 
-// Настройки директоров для уведомлений
+// ─────────────────────────────────────────
+// Schema: references_service (read-only)
+// ─────────────────────────────────────────
+
+model City {
+  id       Int     @id @default(autoincrement())
+  name     String  @unique @db.VarChar(100)
+  code     String  @unique @db.VarChar(20)
+  isActive Boolean @default(true) @map("is_active")
+
+  @@schema("references_service")
+  @@map("cities")
+}
+
+model Rk {
+  id       Int     @id @default(autoincrement())
+  name     String  @unique @db.VarChar(100)
+  code     String  @unique @db.VarChar(50)
+  isActive Boolean @default(true) @map("is_active")
+
+  @@schema("references_service")
+  @@map("rk")
+}
+
+model EquipmentType {
+  id       Int     @id @default(autoincrement())
+  name     String  @unique @db.VarChar(100)
+  code     String  @unique @db.VarChar(50)
+  isActive Boolean @default(true) @map("is_active")
+
+  @@schema("references_service")
+  @@map("equipment_types")
+}
+
+// ─────────────────────────────────────────
+// Schema: auth_service (read-only)
+// ─────────────────────────────────────────
+
 model Director {
-  id            Int           @id @default(autoincrement())
-  cities        String[]
-  name          String
-  login         String        @unique
-  password      String
-  contractDoc   String?       @map("contract_doc")
-  passportDoc   String?       @map("passport_doc")
-  dateCreate    DateTime      @default(now()) @map("date_create")
-  note          String?
-  tgId          String?       @map("tg_id")
-  createdAt     DateTime      @default(now()) @map("created_at")
-  updatedAt     DateTime      @updatedAt @map("updated_at")
-  
-  // ✅ FIX #163: Индекс для поиска директора по Telegram ID
-  @@index([tgId])
-  @@map("director")
+  id      Int     @id @default(autoincrement())
+  name    String  @db.VarChar(255)
+  cityIds Int[]   @default([]) @map("city_ids")
+  tgId    String? @map("tg_id") @db.VarChar(50)
+  chatId  String? @map("chat_id") @db.VarChar(50)
+  status  String  @db.VarChar(50)
+
+  @@index([cityIds])
+  @@schema("auth_service")
+  @@map("directors")
 }
 
-// Настройки мастеров для уведомлений
 model Master {
-  id            Int           @id @default(autoincrement())
-  cities        String[]
-  name          String
-  login         String?       @unique
-  password      String?
-  passportDoc   String?       @map("passport_doc")
-  contractDoc   String?       @map("contract_doc")
-  statusWork    String        @map("status_work")
-  dateCreate    DateTime      @default(now()) @map("date_create")
-  note          String?
-  tgId          String?       @map("tg_id")
-  chatId        String?       @map("chat_id")
-  createdAt     DateTime      @default(now()) @map("created_at")
-  updatedAt     DateTime      @updatedAt @map("updated_at")
-  
-  orders        Order[]
-  
-  // ✅ FIX #163: Индексы для быстрого поиска мастеров
-  @@index([tgId])                               // Поиск по Telegram ID
-  @@index([chatId])                             // Поиск по Chat ID
-  @@index([statusWork])                         // Фильтрация по статусу работы
-  @@map("master")
+  id      Int     @id @default(autoincrement())
+  name    String  @db.VarChar(255)
+  cityIds Int[]   @default([]) @map("city_ids")
+  chatId  String? @map("chat_id") @db.VarChar(50)
+  status  String  @db.VarChar(50)
+
+  @@schema("auth_service")
+  @@map("masters")
 }
 
-// Для связи с заказами (read-only)
+// ─────────────────────────────────────────
+// Schema: orders_service (read-only)
+// ─────────────────────────────────────────
+
 model Order {
-  id                    Int       @id @default(autoincrement())
-  rk                    String
-  city                  String
-  avitoName             String?   @map("avito_name")
-  phone                 String
-  typeOrder             String    @map("type_order")
-  clientName            String    @map("client_name")
-  address               String
-  dateMeeting           DateTime  @map("date_meeting")
-  typeEquipment         String    @map("type_equipment")
-  problem               String
-  callRecord            String?   @map("call_record")
-  statusOrder           String    @map("status_order")
-  masterId              Int?      @map("master_id")
-  result                Decimal?  @db.Decimal(10, 2)
-  expenditure           Decimal?  @db.Decimal(10, 2)
-  clean                 Decimal?  @db.Decimal(10, 2)
-  masterChange          Decimal?  @map("master_change") @db.Decimal(10, 2)
-  operatorNameId        Int       @map("operator_name_id")
-  createDate            DateTime  @map("create_date")
-  closingData           DateTime? @map("closing_data")
-  dateClosmod           DateTime? @map("date_closmod")
-  createdAt             DateTime  @default(now()) @map("created_at")
-  updatedAt             DateTime  @updatedAt @map("updated_at")
-  
-  // ✅ FIX #146: SetNull - заказ остаётся, мастер открепляется
-  master                Master?   @relation(fields: [masterId], references: [id], onDelete: SetNull)
-  
-  // ✅ FIX #163: Индексы для быстрых запросов в notifications-service
-  @@index([masterId])                           // Уведомления мастеру
-  @@index([city])                               // Уведомления директору по городу
-  @@index([statusOrder])                        // Фильтрация по статусу
-  @@index([dateMeeting])                        // Напоминания о встречах
-  @@index([createDate(sort: Desc)])             // Сортировка по дате создания
-  @@index([city, statusOrder])                  // Комбинированный для директоров
-  @@index([masterId, statusOrder])              // Комбинированный для мастеров
+  id              Int       @id @default(autoincrement())
+  cityId          Int       @map("city_id")
+  rkId            Int       @map("rk_id")
+  equipmentTypeId Int       @map("equipment_type_id")
+  masterId        Int?      @map("master_id")
+  operatorId      Int       @map("operator_id")
+  statusId        Int       @map("status_id")
+  clientName      String    @map("client_name") @db.VarChar(255)
+  phone           String    @db.VarChar(20)
+  address         String    @db.VarChar(500)
+  dateMeeting     DateTime  @map("date_meeting")
+  result          Decimal?  @db.Decimal(10, 2)
+  expenditure     Decimal?  @db.Decimal(10, 2)
+  clean           Decimal?  @db.Decimal(10, 2)
+  masterChange    Decimal?  @map("master_change") @db.Decimal(10, 2)
+  closingAt       DateTime? @map("closing_at")
+  dateCloseMod    DateTime? @map("date_close_mod")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  city          City          @relation(fields: [cityId], references: [id])
+  rk            Rk            @relation(fields: [rkId], references: [id])
+  equipmentType EquipmentType @relation(fields: [equipmentTypeId], references: [id])
+
+  @@schema("orders_service")
   @@map("orders")
 }
 
-// Логи ошибок (shared with auth-service)
-model ErrorLog {
-  id             Int      @id @default(autoincrement())
-  timestamp      DateTime @default(now())
-  service        String   @db.VarChar(100)
-  errorType      String   @db.VarChar(255)
-  errorMessage   String   @db.Text
-  stackTrace     String?  @db.Text
-  userId         Int?
-  userRole       String?  @db.VarChar(50)
-  requestUrl     String?  @db.VarChar(500)
-  requestMethod  String?  @db.VarChar(10)
-  ip             String?  @db.VarChar(45)
-  userAgent      String?  @db.Text
-  metadata       Json?    @db.JsonB
+// ─────────────────────────────────────────
+// Schema: notifications_service
+// ─────────────────────────────────────────
 
-  @@index([timestamp(sort: Desc)])
-  @@index([service, timestamp(sort: Desc)])
-  @@index([errorType])
-  @@index([userId])
-  @@map("error_logs")
+/// Логи уведомлений (Telegram, SMS, Email)
+model NotificationLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")        /// ID получателя
+  userType  String   @map("user_type") @db.VarChar(20) /// Тип получателя (operator/director/master)
+  channel   String   @db.VarChar(20)        /// telegram/sms/email
+  message   String   @db.Text              /// Текст сообщения
+  status    String   @db.VarChar(20)        /// sent/failed/pending
+  error     String?  @db.Text              /// Текст ошибки
+  metadata  Json?    @db.JsonB             /// Доп. данные
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId, userType])
+  @@index([channel])
+  @@index([status])
+  @@index([createdAt])
+  @@index([channel, status])
+  @@schema("notifications_service")
+  @@map("notification_logs")
 }
-
-

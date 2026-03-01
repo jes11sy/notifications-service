@@ -83,11 +83,6 @@ export class NewOrderNotificationDto {
   @ApiProperty({ required: false })
   @IsString()
   @IsOptional()
-  avitoName?: string;
-
-  @ApiProperty({ required: false })
-  @IsString()
-  @IsOptional()
   typeEquipment?: string;
 }
 
@@ -158,11 +153,6 @@ export class OrderRejectionNotificationDto {
   @ApiProperty({ required: false })
   @IsString()
   @IsOptional()
-  avitoName?: string;
-
-  @ApiProperty({ required: false })
-  @IsString()
-  @IsOptional()
   typeEquipment?: string;
 
   @ApiProperty({ required: false })
@@ -185,11 +175,6 @@ export class MasterAssignedNotificationDto {
   @IsString()
   @IsOptional()
   rk?: string;
-
-  @ApiProperty({ required: false })
-  @IsString()
-  @IsOptional()
-  avitoName?: string;
 
   @ApiProperty({ required: false })
   @IsString()
@@ -240,11 +225,6 @@ export class OrderAcceptedNotificationDto {
   @IsString()
   @IsOptional()
   rk?: string;
-
-  @ApiProperty({ required: false })
-  @IsString()
-  @IsOptional()
-  avitoName?: string;
 
   @ApiProperty({ required: false })
   @IsString()
@@ -324,11 +304,6 @@ export class OrderInModernNotificationDto {
   @ApiProperty({ required: false })
   @IsString()
   @IsOptional()
-  avitoName?: string;
-
-  @ApiProperty({ required: false })
-  @IsString()
-  @IsOptional()
   typeEquipment?: string;
 
   @ApiProperty({ required: false })
@@ -374,11 +349,6 @@ export class CloseOrderReminderNotificationDto {
   @ApiProperty({ required: false })
   @IsString()
   @IsOptional()
-  avitoName?: string;
-
-  @ApiProperty({ required: false })
-  @IsString()
-  @IsOptional()
   typeEquipment?: string;
 
   @ApiProperty({ required: false })
@@ -419,11 +389,6 @@ export class ModernClosingReminderNotificationDto {
   @ApiProperty({ required: false })
   @IsString()
   @IsOptional()
-  avitoName?: string;
-
-  @ApiProperty({ required: false })
-  @IsString()
-  @IsOptional()
   typeEquipment?: string;
 
   @ApiProperty({ required: false })
@@ -460,11 +425,6 @@ export class CityChangeNotificationDto {
   @IsString()
   @IsOptional()
   rk?: string;
-
-  @ApiProperty({ required: false })
-  @IsString()
-  @IsOptional()
-  avitoName?: string;
 
   @ApiProperty({ required: false })
   @IsString()
@@ -513,11 +473,6 @@ export class AddressChangeNotificationDto {
   @ApiProperty({ required: false })
   @IsString()
   @IsOptional()
-  avitoName?: string;
-
-  @ApiProperty({ required: false })
-  @IsString()
-  @IsOptional()
   typeEquipment?: string;
 
   @ApiProperty({ required: false })
@@ -525,4 +480,3 @@ export class AddressChangeNotificationDto {
   @IsOptional()
   dateMeeting?: string;
 }
-

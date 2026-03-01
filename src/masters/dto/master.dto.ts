@@ -1,12 +1,8 @@
-import { IsString, IsOptional, IsArray } from 'class-validator';
+import { IsString, IsOptional, IsArray, IsInt } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateMasterTelegramDto {
-  @ApiProperty({ required: false, description: 'Telegram ID мастера' })
-  @IsString()
-  @IsOptional()
-  tgId?: string;
-
   @ApiProperty({ required: false, description: 'Telegram Chat ID мастера' })
   @IsString()
   @IsOptional()
@@ -14,8 +10,9 @@ export class UpdateMasterTelegramDto {
 }
 
 export class UpdateMasterCitiesDto {
-  @ApiProperty({ type: [String], description: 'Список городов' })
+  @ApiProperty({ type: [Number], description: 'ID городов из references_service' })
   @IsArray()
-  cities: string[];
+  @IsInt({ each: true })
+  @Type(() => Number)
+  cityIds: number[];
 }
-
