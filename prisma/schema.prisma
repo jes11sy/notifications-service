@@ -19,6 +19,8 @@ model City {
   code     String  @unique @db.VarChar(20)
   isActive Boolean @default(true) @map("is_active")
 
+  orders Order[]
+
   @@schema("references_service")
   @@map("cities")
 }
@@ -29,6 +31,8 @@ model Rk {
   code     String  @unique @db.VarChar(50)
   isActive Boolean @default(true) @map("is_active")
 
+  orders Order[]
+
   @@schema("references_service")
   @@map("rk")
 }
@@ -38,6 +42,8 @@ model EquipmentType {
   name     String  @unique @db.VarChar(100)
   code     String  @unique @db.VarChar(50)
   isActive Boolean @default(true) @map("is_active")
+
+  orders Order[]
 
   @@schema("references_service")
   @@map("equipment_types")
