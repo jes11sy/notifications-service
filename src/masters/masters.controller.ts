@@ -25,8 +25,8 @@ export class MastersController {
   @Roles(UserRole.DIRECTOR, UserRole.ADMIN)
   @ApiOperation({ summary: 'Get masters by cities' })
   async getMastersByCities(@Query('cities') cities: string) {
-    const cityArray = cities.split(',').map(c => c.trim());
-    return this.mastersService.getMastersByCities(cityArray);
+    const cityArray = cities.split(',').map(c => parseInt(c.trim(), 10)).filter(n => !isNaN(n));
+    return this.mastersService.getMastersByCityIds(cityArray);
   }
 
   @Get(':id')

@@ -99,7 +99,7 @@ export class RemindersService {
           }
         } else {
           // Случай 2: Нет даты закрытия - напоминаем через 3+ дня после обновления
-          const orderDate = new Date(order.updatedAt);
+          const orderDate = new Date(order.createdAt);
           orderDate.setHours(0, 0, 0, 0);
           
           const daysSinceOrderUpdate = Math.floor(

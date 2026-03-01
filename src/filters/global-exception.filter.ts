@@ -7,13 +7,12 @@ import {
   Logger,
 } from '@nestjs/common';
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { PrismaService } from '../prisma/prisma.service';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(GlobalExceptionFilter.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor() {}
 
   async catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
@@ -37,32 +36,6 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
     const stackTrace =
       exception instanceof Error ? exception.stack : undefined;
-
-    if (status >= 500) {
-      try {
-        await this.prisma.errorLog.create({
-          data: {
-            service: 'notifications-service',
-            errorType,
-            errorMessage,
-            stackTrace,
-            userId: (request as any).user?.userId || null,
-            userRole: (request as any).user?.role || null,
-            requestUrl: request.url,
-            requestMethod: request.method,
-            ip: request.ip || (request.headers['x-forwarded-for'] as string) || null,
-            userAgent: request.headers['user-agent'] || null,
-            metadata: JSON.parse(JSON.stringify({
-              body: request.body ?? null,
-              params: request.params ?? null,
-              query: request.query ?? null,
-            })),
-          },
-        });
-      } catch (dbError) {
-        this.logger.error(`🔥 Failed to write error log to DB`, dbError);
-      }
-    }
 
     this.logger.error(
       `[notifications-service] ${request.method} ${request.url} - ${status} ${errorMessage}`,

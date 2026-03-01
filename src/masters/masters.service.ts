@@ -14,7 +14,6 @@ export class MastersService {
         cityIds: true,
         status: true,
         chatId: true,
-        createdAt: true,
       },
       orderBy: { name: 'asc' },
     });
@@ -34,7 +33,6 @@ export class MastersService {
         cityIds: true,
         status: true,
         chatId: true,
-        createdAt: true,
       },
     });
 
