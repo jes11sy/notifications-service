@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import axios, { AxiosError, AxiosRequestConfig } from 'axios';
+import axios, { AxiosError, AxiosProxyConfig } from 'axios';
 import { SiteOrdersParserService, ParsedSiteOrder } from './site-orders-parser.service';
 
 @Injectable()
@@ -14,7 +14,7 @@ export class TelegramService {
   private readonly webhookToken: string;
   private readonly parser: SiteOrdersParserService;
 
-  private readonly proxyConfig: AxiosRequestConfig['proxy'] = {
+  private readonly proxyConfig: AxiosProxyConfig = {
     host: '181.177.85.108',
     port: 9336,
     auth: {
