@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import axios, { AxiosError } from 'axios';
+import axios, { AxiosError, AxiosRequestConfig } from 'axios';
 import { SiteOrdersParserService, ParsedSiteOrder } from './site-orders-parser.service';
 
 @Injectable()
@@ -14,6 +14,16 @@ export class TelegramService {
   private readonly webhookToken: string;
   private readonly parser: SiteOrdersParserService;
 
+  private readonly proxyConfig: AxiosRequestConfig['proxy'] = {
+    host: '181.177.85.108',
+    port: 9336,
+    auth: {
+      username: 'GKvDm1',
+      password: 'G2zaBr',
+    },
+    protocol: 'http',
+  };
+
   constructor() {
     this.botToken = process.env.TELEGRAM_BOT_TOKEN || '';
     this.apiUrl = process.env.TELEGRAM_API_URL || 'https://api.telegram.org';
@@ -27,6 +37,8 @@ export class TelegramService {
     } else {
       this.logger.log('✅ Telegram Bot configured');
     }
+
+    this.logger.log(`✅ Telegram proxy configured: ${this.proxyConfig.host}:${this.proxyConfig.port}`);
 
     if (!this.siteOrdersChatId) {
       this.logger.warn('⚠️ SITE_ORDERS_CHAT_ID not configured - site orders parsing disabled');
@@ -97,10 +109,11 @@ export class TelegramService {
     for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
       try {
         const response = await axios.post(url, payload, {
-          timeout: 15000, // Увеличиваем timeout до 15 секунд
+          timeout: 15000,
           headers: {
             'Content-Type': 'application/json',
           },
+          proxy: this.proxyConfig,
         });
 
         if (response.data.ok) {
@@ -149,7 +162,7 @@ export class TelegramService {
   async getMe(): Promise<any> {
     try {
       const url = `${this.apiUrl}/bot${this.botToken}/getMe`;
-      const response = await axios.get(url);
+      const response = await axios.get(url, { proxy: this.proxyConfig });
       return response.data;
     } catch (error) {
       this.logger.error(`Error getting bot info: ${error.message}`);
@@ -318,7 +331,7 @@ export class TelegramService {
       const response = await axios.post(url, {
         url: webhookUrl,
         allowed_updates: ['message', 'callback_query'],
-      });
+      }, { proxy: this.proxyConfig });
 
       if (response.data.ok) {
         this.logger.log(`✅ Webhook set to: ${webhookUrl}`);
@@ -339,7 +352,7 @@ export class TelegramService {
   async deleteWebhook(): Promise<boolean> {
     try {
       const url = `${this.apiUrl}/bot${this.botToken}/deleteWebhook`;
-      const response = await axios.post(url);
+      const response = await axios.post(url, {}, { proxy: this.proxyConfig });
       
       if (response.data.ok) {
         this.logger.log('✅ Webhook deleted');
@@ -358,7 +371,7 @@ export class TelegramService {
   async getWebhookInfo(): Promise<any> {
     try {
       const url = `${this.apiUrl}/bot${this.botToken}/getWebhookInfo`;
-      const response = await axios.get(url);
+      const response = await axios.get(url, { proxy: this.proxyConfig });
       return response.data.result;
     } catch (error) {
       this.logger.error(`Error getting webhook info: ${error.message}`);
