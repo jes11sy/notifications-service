@@ -15,9 +15,7 @@ export class TelegramService {
   private readonly webhookToken: string;
   private readonly parser: SiteOrdersParserService;
 
-  private readonly proxyAgent = new HttpsProxyAgent(
-    'http://GKvDm1:G2zaBr@181.177.85.108:9336'
-  );
+  private readonly proxyAgent: HttpsProxyAgent<string>;
 
   constructor() {
     this.botToken = process.env.TELEGRAM_BOT_TOKEN || '';
@@ -26,20 +24,29 @@ export class TelegramService {
     this.ordersServiceUrl = process.env.ORDERS_SERVICE_URL || 'http://orders-service:5003';
     this.webhookToken = process.env.WEBHOOK_TOKEN || process.env.NOTIFICATIONS_WEBHOOK_TOKEN || '';
     this.parser = new SiteOrdersParserService();
-    
+
+    this.proxyAgent = new HttpsProxyAgent('http://user391172:1c5jnf@89.34.106.169:8410');
+    this.logger.log('✅ Telegram HTTP proxy configured: 89.34.106.169:8410');
+
     if (!this.botToken) {
       this.logger.warn('⚠️ TELEGRAM_BOT_TOKEN not configured');
     } else {
       this.logger.log('✅ Telegram Bot configured');
     }
 
-    this.logger.log('✅ Telegram HTTP proxy configured: 181.177.85.108:9336');
-
     if (!this.siteOrdersChatId) {
       this.logger.warn('⚠️ SITE_ORDERS_CHAT_ID not configured - site orders parsing disabled');
     } else {
       this.logger.log(`✅ Site orders chat configured: ${this.siteOrdersChatId}`);
     }
+  }
+
+  private get axiosProxyConfig() {
+    return {
+      httpAgent: this.proxyAgent,
+      httpsAgent: this.proxyAgent,
+      proxy: false as const,
+    };
   }
 
   /**
@@ -108,9 +115,7 @@ export class TelegramService {
           headers: {
             'Content-Type': 'application/json',
           },
-          httpAgent: this.proxyAgent,
-          httpsAgent: this.proxyAgent,
-          proxy: false,
+          ...this.axiosProxyConfig,
         });
 
         if (response.data.ok) {
@@ -160,9 +165,7 @@ export class TelegramService {
     try {
       const url = `${this.apiUrl}/bot${this.botToken}/getMe`;
       const response = await axios.get(url, {
-        httpAgent: this.proxyAgent,
-        httpsAgent: this.proxyAgent,
-        proxy: false,
+        ...this.axiosProxyConfig,
       });
       return response.data;
     } catch (error) {
@@ -333,9 +336,7 @@ export class TelegramService {
         url: webhookUrl,
         allowed_updates: ['message', 'callback_query'],
       }, {
-        httpAgent: this.proxyAgent,
-        httpsAgent: this.proxyAgent,
-        proxy: false,
+        ...this.axiosProxyConfig,
       });
 
       if (response.data.ok) {
@@ -358,9 +359,7 @@ export class TelegramService {
     try {
       const url = `${this.apiUrl}/bot${this.botToken}/deleteWebhook`;
       const response = await axios.post(url, {}, {
-        httpAgent: this.proxyAgent,
-        httpsAgent: this.proxyAgent,
-        proxy: false,
+        ...this.axiosProxyConfig,
       });
       
       if (response.data.ok) {
@@ -381,9 +380,7 @@ export class TelegramService {
     try {
       const url = `${this.apiUrl}/bot${this.botToken}/getWebhookInfo`;
       const response = await axios.get(url, {
-        httpAgent: this.proxyAgent,
-        httpsAgent: this.proxyAgent,
-        proxy: false,
+        ...this.axiosProxyConfig,
       });
       return response.data.result;
     } catch (error) {
